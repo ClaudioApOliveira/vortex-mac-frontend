@@ -16,7 +16,8 @@ defaults:
 jobs:
   quality:
     name: Lint & Build
-    runs-on: self-hosted
+    # Runner self-hosted em ~/actions-runner-2 (label: vortex-mec-frontend)
+    runs-on: [self-hosted, vortex-mec-frontend]
     # Evita executar PRs de forks no runner self-hosted (risco de execução de código não confiável).
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
@@ -42,7 +43,7 @@ jobs:
 
   docker:
     name: Docker Build
-    runs-on: self-hosted
+    runs-on: [self-hosted, vortex-mec-frontend]
     needs: quality
     environment: DOCKERHUB
     env:
@@ -77,15 +78,19 @@ jobs:
           exit 1
 
       - name: Run Trivy vulnerability scanner
-        if: github.event_name == 'pull_request'
-        uses: aquasecurity/trivy-action@0.30.0
-        with:
-          image-ref: 'vortex-mec-frontend:${{ github.sha }}'
-          format: table
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+        run: |
+          set -euo pipefail
+          if ! command -v trivy >/dev/null 2>&1; then
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+              | sh -s -- -b /usr/local/bin
+          fi
+          trivy image \
+            --format table \
+            --exit-code 1 \
+            --ignore-unfixed \
+            --vuln-type os,library \
+            --severity CRITICAL,HIGH \
+            "vortex-mec-frontend:${GITHUB_SHA}"
 
       - name: Login to Docker Hub
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
