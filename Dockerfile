@@ -20,6 +20,7 @@ RUN bun run build
 FROM nginx:1.27-bookworm AS nginx
 
 FROM debian:bookworm-slim AS nginx-bundle
+ARG BACKEND_URL=http://backend:8080
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -27,7 +28,8 @@ RUN apt-get update \
 COPY --from=nginx /usr/sbin/nginx /bundle/usr/sbin/nginx
 COPY --from=nginx /etc/nginx/mime.types /bundle/etc/nginx/mime.types
 COPY nginx/nginx.conf /bundle/etc/nginx/nginx.conf
-COPY nginx/default.conf /bundle/etc/nginx/conf.d/default.conf
+COPY nginx/default.conf /tmp/default.conf
+RUN sed "s|__BACKEND_URL__|${BACKEND_URL}|g" /tmp/default.conf > /bundle/etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /bundle/usr/share/nginx/html
 
 RUN set -eux; \
@@ -57,7 +59,6 @@ RUN set -eux; \
         /bundle/usr/share/nginx/html
 
 FROM gcr.io/distroless/base-debian12:nonroot
-ENV BACKEND_URL=http://backend:8080
 
 COPY --from=nginx-bundle --chown=65532:65532 /bundle /
 
