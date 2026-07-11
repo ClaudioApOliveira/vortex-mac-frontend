@@ -44,6 +44,10 @@ jobs:
     name: Docker Build
     runs-on: self-hosted
     needs: quality
+    environment: DOCKERHUB
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
@@ -60,7 +64,7 @@ jobs:
 
       - name: Smoke test container
         run: |
-          docker run -d --name vortex-mec-frontend-ci -p 8088:80 "vortex-mec-frontend:${{ github.sha }}"
+          docker run -d --name vortex-mec-frontend-ci -p 8088:8080 "vortex-mec-frontend:${{ github.sha }}"
           for i in {1..10}; do
             if curl -fsS http://127.0.0.1:8088/ > /dev/null; then
               echo "Container responded successfully"
@@ -87,8 +91,8 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       - name: Push image to Docker Hub
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
