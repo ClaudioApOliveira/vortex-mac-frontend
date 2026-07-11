@@ -29,7 +29,8 @@ COPY --from=nginx /usr/sbin/nginx /bundle/usr/sbin/nginx
 COPY --from=nginx /etc/nginx/mime.types /bundle/etc/nginx/mime.types
 COPY nginx/nginx.conf /bundle/etc/nginx/nginx.conf
 COPY nginx/default.conf /tmp/default.conf
-RUN sed "s|__BACKEND_URL__|${BACKEND_URL}|g" /tmp/default.conf > /bundle/etc/nginx/conf.d/default.conf
+RUN mkdir -p /bundle/etc/nginx/conf.d \
+    && sed "s|__BACKEND_URL__|${BACKEND_URL}|g" /tmp/default.conf > /bundle/etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /bundle/usr/share/nginx/html
 
 RUN set -eux; \
