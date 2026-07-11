@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -96,7 +93,7 @@ jobs:
       - name: Push image to Docker Hub
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
-          IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/vortex-mec-frontend
+          IMAGE: oliveiraclaudio/vortex-mec-frontend
         run: |
           set -euo pipefail
           SHORT_SHA="${GITHUB_SHA::7}"
