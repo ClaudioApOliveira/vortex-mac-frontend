@@ -1,0 +1,219 @@
+@import './CustomersPage.css';
+
+.client-service-orders-page .page-header {
+  margin-bottom: 0;
+}
+
+.client-service-orders-shell {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.client-service-orders-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.client-service-orders-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.client-service-orders-section-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--text-primary);
+}
+
+.client-service-orders-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.client-service-orders-empty {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--glass-border);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.service-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.service-order-list-header {
+  display: none;
+}
+
+.service-order-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.95fr) minmax(0, 1.2fr) auto auto;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--glass-shadow);
+}
+
+.service-order-card--pending {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.service-order-card-primary {
+  min-width: 0;
+}
+
+.service-order-card-primary strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+}
+
+.service-order-card-primary small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.service-order-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.service-order-card-details {
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.service-order-card-details span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-order-card-total {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.service-order-card-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.service-order-card-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  white-space: nowrap;
+}
+
+.service-order-card-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .service-order-list-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.95fr) minmax(0, 1.2fr) auto auto;
+    gap: 1rem 1.25rem;
+    padding: 0 1.25rem 0.25rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .service-order-list-header span:last-child,
+  .service-order-card-total,
+  .service-order-card-action {
+    text-align: right;
+  }
+}
+
+@media (max-width: 1023px) {
+  .service-order-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'primary total'
+      'meta meta'
+      'details details'
+      'action action';
+    gap: 0.75rem;
+  }
+
+  .service-order-card-primary {
+    grid-area: primary;
+  }
+
+  .service-order-card-meta {
+    grid-area: meta;
+  }
+
+  .service-order-card-details {
+    grid-area: details;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--glass-border);
+  }
+
+  .service-order-card-details span {
+    white-space: normal;
+  }
+
+  .service-order-card-total {
+    grid-area: total;
+    align-self: start;
+  }
+
+  .service-order-card-action {
+    grid-area: action;
+    justify-content: stretch;
+  }
+
+  .service-order-card-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .service-order-card {
+    padding: 0.875rem 1rem;
+  }
+}

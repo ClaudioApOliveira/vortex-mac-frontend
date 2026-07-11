@@ -1,0 +1,44 @@
+.logo {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.logo--full {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.logo--compact {
+  width: 100%;
+  max-width: 168px;
+  height: auto;
+}
+
+.logo--icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  object-position: left center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+}
+
+.logo--mobile {
+  height: 36px;
+  width: auto;
+  max-width: 118px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (max-width: 380px) {
+  .logo--mobile {
+    height: 32px;
+    max-width: 100px;
+  }
+}
