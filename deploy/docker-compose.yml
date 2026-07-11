@@ -107,10 +107,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ""
+        BACKEND_URL: http://backend:8080
     container_name: vortex-frontend
     restart: unless-stopped
-    environment:
-      BACKEND_URL: http://backend:8080
     depends_on:
       backend:
         condition: service_healthy

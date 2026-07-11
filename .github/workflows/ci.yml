@@ -65,8 +65,9 @@ jobs:
 
       - name: Smoke test container
         run: |
+          docker rm -f vortex-mec-frontend-ci || true
           docker run -d --name vortex-mec-frontend-ci -p 8088:8080 "vortex-mec-frontend:${{ github.sha }}"
-          for i in {1..10}; do
+          for i in {1..15}; do
             if curl -fsS http://127.0.0.1:8088/ > /dev/null; then
               echo "Container responded successfully"
               exit 0
