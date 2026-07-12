@@ -10,7 +10,7 @@ import { usePaginationState } from '../hooks/usePaginationState'
 import type { VehicleFormData } from '../schemas/vehicle.schema'
 import type { Vehicle } from '../types'
 import { getSafeApiErrorMessage } from '../utils/apiMessages'
-import { displayPlaca } from '../utils/masks'
+import { displayAnoFabModelo, displayPlaca } from '../utils/masks'
 import './CustomersPage.css'
 
 export function VehiclesPage() {
@@ -142,7 +142,7 @@ export function VehiclesPage() {
                         {vehicle.marca} {vehicle.modelo}
                       </strong>
                     </td>
-                    <td>{vehicle.anoFabricacao}</td>
+                    <td>{displayAnoFabModelo(vehicle.anoFabricacao)}</td>
                     <td>{vehicle.clienteNome}</td>
                     <td>{vehicle.motor ?? '—'}</td>
                     <td>{vehicle.combustivel ?? '—'}</td>

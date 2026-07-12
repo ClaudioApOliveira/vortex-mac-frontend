@@ -5,7 +5,7 @@ import {
   vehicleFormInputSchema,
   type VehicleFormData,
 } from '../../schemas/vehicle.schema'
-import { displayPlaca } from '../../utils/masks'
+import { displayAnoFabModelo, displayPlaca } from '../../utils/masks'
 import type { Vehicle } from '../../types'
 import { Modal } from '../ui/Modal'
 import { VehicleFormFields } from './VehicleFormFields'
@@ -28,7 +28,7 @@ function toFormData(vehicle: Vehicle): VehicleFormData {
     placa: displayPlaca(vehicle.placa),
     marca: vehicle.marca,
     modelo: vehicle.modelo,
-    anoFabricacao: String(vehicle.anoFabricacao),
+    anoFabricacao: displayAnoFabModelo(vehicle.anoFabricacao),
     motor: vehicle.motor ?? '',
     combustivel: vehicle.combustivel ?? '',
     kmAtual: vehicle.kmAtual !== undefined ? String(vehicle.kmAtual) : '',

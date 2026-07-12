@@ -26,6 +26,24 @@ export function formatPlaca(value: string) {
   return cleaned
 }
 
+export function formatAnoFabModelo(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 4) return digits
+  return `${digits.slice(0, 4)}/${digits.slice(4)}`
+}
+
+export function displayAnoFabModelo(anoFabricacao: number) {
+  return `${anoFabricacao}/${anoFabricacao}`
+}
+
+export function parseAnoFabModelo(value: string) {
+  const [fabricacao, modelo] = value.split('/')
+  return {
+    anoFabricacao: Number(fabricacao),
+    anoModelo: Number(modelo),
+  }
+}
+
 export function displayPlaca(placa: string) {
   const cleaned = placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
   if (/^[A-Z]{3}\d[A-Z]\d{2}$/.test(cleaned)) return cleaned

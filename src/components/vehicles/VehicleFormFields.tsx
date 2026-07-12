@@ -1,5 +1,6 @@
 import { FormField } from '../ui/FormField'
-import { formatPlaca } from '../../utils/masks'
+import { ANO_VEICULO_MAX } from '../../schemas/vehicle.schema'
+import { formatAnoFabModelo, formatPlaca } from '../../utils/masks'
 import type { VehicleFormData } from '../../schemas/vehicle.schema'
 import './VehicleFormFields.css'
 
@@ -71,15 +72,15 @@ export function VehicleFormFields({
           maxLength={8}
         />
         <FormField
-          label="Ano de fabricação"
+          label="Ano fabricação / modelo"
           name="anoFabricacao"
-          type="number"
           value={form.anoFabricacao}
-          onChange={(e) => onChange('anoFabricacao', e.target.value)}
+          onChange={(e) => onChange('anoFabricacao', formatAnoFabModelo(e.target.value))}
           error={errors.anoFabricacao}
-          placeholder="2002"
-          min={1900}
-          max={2100}
+          placeholder={`2025/${ANO_VEICULO_MAX}`}
+          title="Primeiro: ano de fabricação. Segundo: ano de modelo."
+          inputMode="numeric"
+          maxLength={9}
         />
       </div>
 
