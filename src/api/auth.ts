@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../config/api'
 import { apiRequest } from './client'
 import { parseApiData, parseApiError } from './errors'
-import { getRefreshToken, setTokensFromResponse } from './tokenStorage'
+import { setTokensFromResponse } from './tokenStorage'
 import type {
   ChangePasswordRequest,
   PageResponse,
@@ -13,13 +13,23 @@ import type {
   VerificarPrimeiroAcessoResponse,
 } from './types'
 
+const FETCH_CREDENTIALS: RequestCredentials = 'include'
+
 function buildPageQuery(page: number, size: number) {
   return `?page=${page}&size=${size}`
+}
+
+function assertAccessTokenResponse(data: TokenResponse | null, context: string) {
+  if (!data?.accessToken) {
+    throw new Error(`Resposta de ${context} inválida.`)
+  }
+  return data
 }
 
 export async function loginRequest(email: string, senha: string) {
   const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: 'POST',
+    credentials: FETCH_CREDENTIALS,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, senha }),
   })
@@ -28,11 +38,10 @@ export async function loginRequest(email: string, senha: string) {
     throw await parseApiError(response)
   }
 
-  const data = await parseApiData<TokenResponse>(response)
-
-  if (!data?.accessToken || !data?.refreshToken) {
-    throw new Error('Resposta de login inválida.')
-  }
+  const data = assertAccessTokenResponse(
+    await parseApiData<TokenResponse>(response),
+    'login',
+  )
 
   setTokensFromResponse(data)
   return data
@@ -41,6 +50,7 @@ export async function loginRequest(email: string, senha: string) {
 export async function verificarPrimeiroAcesso(email: string) {
   const response = await fetch(`${API_BASE_URL}/api/auth/verificar-primeiro-acesso`, {
     method: 'POST',
+    credentials: FETCH_CREDENTIALS,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
   })
@@ -65,6 +75,7 @@ export async function primeiroAcessoRequest(
 ) {
   const response = await fetch(`${API_BASE_URL}/api/auth/primeiro-acesso`, {
     method: 'POST',
+    credentials: FETCH_CREDENTIALS,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, senha, confirmarSenha }),
   })
@@ -73,11 +84,10 @@ export async function primeiroAcessoRequest(
     throw await parseApiError(response)
   }
 
-  const data = await parseApiData<TokenResponse>(response)
-
-  if (!data?.accessToken || !data?.refreshToken) {
-    throw new Error('Resposta de primeiro acesso inválida.')
-  }
+  const data = assertAccessTokenResponse(
+    await parseApiData<TokenResponse>(response),
+    'primeiro acesso',
+  )
 
   setTokensFromResponse(data)
   return data
@@ -139,26 +149,22 @@ export async function updateCurrentUserProfile(data: UpdateProfileRequest) {
 }
 
 export async function changeCurrentUserPassword(data: ChangePasswordRequest) {
-  const tokens = await apiRequest<TokenResponse>('/api/auth/me/senha', {
-    method: 'PUT',
-    body: data,
-  })
-
-  if (!tokens?.accessToken || !tokens?.refreshToken) {
-    throw new Error('Resposta de alteração de senha inválida.')
-  }
+  const tokens = assertAccessTokenResponse(
+    await apiRequest<TokenResponse>('/api/auth/me/senha', {
+      method: 'PUT',
+      body: data,
+    }),
+    'alteração de senha',
+  )
 
   setTokensFromResponse(tokens)
   return tokens
 }
 
 export async function logoutRequest() {
-  const refreshToken = getRefreshToken()
-
   try {
     await apiRequest<void>('/api/auth/logout', {
       method: 'POST',
-      body: { refreshToken: refreshToken ?? null },
     })
   } catch {
     // A sessão pode já estar inválida; a limpeza local ocorre no caller.
