@@ -24,6 +24,7 @@ export function useServiceOrdersList(page: number, pageSize: number) {
     page,
     pageSize,
     enabled,
+    live: true,
   })
 }
 

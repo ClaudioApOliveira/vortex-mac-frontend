@@ -13,6 +13,8 @@ interface UsePaginatedQueryParams<T> {
   page: number
   pageSize: number
   enabled?: boolean
+  /** Atualização periódica em telas que precisam de dados ao vivo */
+  live?: boolean
   options?: PaginatedQueryOptions<T>
 }
 
@@ -22,6 +24,7 @@ export function usePaginatedQuery<T>({
   page,
   pageSize,
   enabled = true,
+  live = false,
   options,
 }: UsePaginatedQueryParams<T>) {
   const query = useQuery({
@@ -29,8 +32,8 @@ export function usePaginatedQuery<T>({
     queryFn: () => queryFn(page, pageSize),
     enabled,
     placeholderData: keepPreviousData,
-    refetchInterval: QUERY_REFETCH_INTERVAL_MS,
-    refetchOnWindowFocus: true,
+    refetchInterval: live ? QUERY_REFETCH_INTERVAL_MS : false,
+    refetchOnWindowFocus: live,
     ...options,
   })
 

@@ -16,6 +16,22 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
 }
 
 let refreshPromise: Promise<boolean> | null = null
+let sessionExpiredHandler: (() => void) | null = null
+let sessionExpiredNotified = false
+
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+  sessionExpiredHandler = handler
+}
+
+export function resetSessionExpiredGuard() {
+  sessionExpiredNotified = false
+}
+
+function notifySessionExpired() {
+  if (sessionExpiredNotified) return
+  sessionExpiredNotified = true
+  sessionExpiredHandler?.()
+}
 
 async function parseRefreshResponse(response: Response): Promise<TokenResponse> {
   const data = await parseApiData<TokenResponse>(response)
@@ -29,6 +45,7 @@ export async function refreshAccessToken(): Promise<boolean> {
   const refreshToken = getRefreshToken()
   if (!refreshToken || isRefreshTokenExpired()) {
     clearTokens()
+    notifySessionExpired()
     return false
   }
 
@@ -40,6 +57,7 @@ export async function refreshAccessToken(): Promise<boolean> {
 
   if (!response.ok) {
     clearTokens()
+    notifySessionExpired()
     return false
   }
 
@@ -49,6 +67,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     return true
   } catch {
     clearTokens()
+    notifySessionExpired()
     return false
   }
 }
@@ -88,6 +107,7 @@ export async function apiRequest<T>(
     const accessToken = getAccessToken()
 
     if (!hasToken || !accessToken) {
+      notifySessionExpired()
       throw new ApiError(401, 'Não autenticado.')
     }
   }
@@ -100,6 +120,7 @@ export async function apiRequest<T>(
   if (auth) {
     const token = getAccessToken()
     if (!token) {
+      notifySessionExpired()
       throw new ApiError(401, 'Não autenticado.')
     }
     requestHeaders.set('Authorization', `Bearer ${token}`)
@@ -126,7 +147,11 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    throw await parseApiError(response)
+    const error = await parseApiError(response)
+    if (auth && error instanceof ApiError && error.status === 401) {
+      notifySessionExpired()
+    }
+    throw error
   }
 
   return parseApiData<T>(response)

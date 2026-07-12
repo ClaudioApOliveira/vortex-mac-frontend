@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ApiError } from '../../api/errors'
 import { fetchMunicipiosByUf } from '../../api/localidades'
 import type { MunicipioResponse } from '../../api/types'
@@ -15,6 +15,7 @@ import { formatCpfCnpj, formatPhone } from '../../utils/masks'
 import { FormField } from '../ui/FormField'
 import { Modal } from '../ui/Modal'
 import { VehicleFormFields } from '../vehicles/VehicleFormFields'
+import { mapZodErrors } from '../../utils/mapZodErrors'
 import '../ui/FormModal.css'
 import './CustomerFormModal.css'
 import '../vehicles/VehicleFormFields.css'
@@ -45,21 +46,6 @@ const emptyForm: CustomerFormData = {
 
 type FormErrors = Partial<Record<keyof CustomerFormData, string>>
 type VehicleErrors = Partial<Record<keyof VehicleFormData, string>>
-
-function mapZodErrors(
-  error: ReturnType<typeof customerSchema.safeParse>['error'],
-): FormErrors {
-  const errors: FormErrors = {}
-  if (!error) return errors
-
-  for (const issue of error.issues) {
-    const path = issue.path[0] as keyof CustomerFormData
-    if (!errors[path]) {
-      errors[path] = issue.message
-    }
-  }
-  return errors
-}
 
 function toFormData(customer: Customer): CustomerFormData {
   return {
@@ -98,6 +84,7 @@ export function CustomerFormModal({
   const [isLoadingMunicipios, setIsLoadingMunicipios] = useState(false)
   const [municipioMessage, setMunicipioMessage] = useState<string | null>(null)
   const [isAddressFromCep, setIsAddressFromCep] = useState(false)
+  const cepLookupIdRef = useRef(0)
 
   useEffect(() => {
     if (!isOpen) return
@@ -191,12 +178,15 @@ export function CustomerFormModal({
     const digits = form.cep.replace(/\D/g, '')
     if (digits.length !== 8) return
 
+    const lookupId = ++cepLookupIdRef.current
     setIsFetchingCep(true)
     setCepMessage(null)
     setIsAddressFromCep(false)
 
     try {
       const address = await fetchAddressByCep(form.cep)
+
+      if (lookupId !== cepLookupIdRef.current) return
 
       if (!address) {
         setCepMessage('CEP não encontrado.')
@@ -216,9 +206,12 @@ export function CustomerFormModal({
         ibge: address.ibge ?? prev.ibge,
       }))
     } catch {
+      if (lookupId !== cepLookupIdRef.current) return
       setCepMessage('Não foi possível buscar o CEP. Tente novamente.')
     } finally {
-      setIsFetchingCep(false)
+      if (lookupId === cepLookupIdRef.current) {
+        setIsFetchingCep(false)
+      }
     }
   }
 

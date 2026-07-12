@@ -4,8 +4,8 @@ import { ApiError } from '../../api/errors'
 import { fetchTechnicians } from '../../api/technicians'
 import type { ServiceOrderStatusHistoryResponse } from '../../api/types'
 import { useAuth } from '../../contexts/AuthContext'
-import { useCustomers } from '../../contexts/CustomerContext'
-import { useVehicles } from '../../contexts/VehicleContext'
+import { useCustomers } from '../../hooks/useCustomers'
+import { useVehicles } from '../../hooks/useVehicles'
 import {
   calculateServiceOrderTotals,
   emptyServiceOrderForm,
