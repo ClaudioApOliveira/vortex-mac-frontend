@@ -7,7 +7,7 @@ import { useMyServiceOrdersDashboard } from '../hooks/useMyServiceOrders'
 import { useServiceOrdersSummary } from '../hooks/useServiceOrders'
 import { ROUTES } from '../routes/paths'
 import { formatCustomerAddress } from '../utils/address'
-import { displayPlaca } from '../utils/masks'
+import { displayAnoFabModelo, displayPlaca } from '../utils/masks'
 import { canViewMyServiceOrders } from '../utils/permissions'
 import { formatCurrency, formatServiceOrderDateTime } from '../utils/serviceOrder'
 import './HomePage.css'
@@ -211,7 +211,9 @@ export function HomePage() {
                       {displayPlaca(vehicle.placa)} · {vehicle.clienteNome}
                     </small>
                   </div>
-                  <span className="recent-item-phone">{vehicle.anoFabricacao}</span>
+                  <span className="recent-item-phone">
+                    {displayAnoFabModelo(vehicle.anoFabricacao)}
+                  </span>
                 </div>
               ))}
             </div>

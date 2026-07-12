@@ -147,6 +147,45 @@ h1, h2, h3 {
   color: var(--error);
 }
 
+/* Password field with visibility toggle */
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  width: 100%;
+  padding-right: 2.875rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.password-toggle:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.password-toggle svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

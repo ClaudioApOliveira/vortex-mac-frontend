@@ -16,6 +16,7 @@ import {
 } from '../utils/apiMessages'
 import { mapZodErrors } from '../utils/mapZodErrors'
 import { FormField } from '../components/ui/FormField'
+import { PasswordField } from '../components/ui/PasswordField'
 import { Logo } from '../components/ui/Logo'
 import './LoginPage.css'
 
@@ -146,7 +147,12 @@ export function LoginPage() {
         <div className="login-card">
           {mode === 'login' ? (
             <form className="login-form" onSubmit={handleLoginSubmit} noValidate>
-              <h2 className="login-title">Entrar</h2>
+              <header className="login-header">
+                <h2 className="login-title">Entrar</h2>
+                <p className="login-subtitle">
+                  Acesse o painel de gestão da sua oficina.
+                </p>
+              </header>
               {submitError && <p className="form-error-banner">{submitError}</p>}
               <FormField
                 label="E-mail"
@@ -160,18 +166,18 @@ export function LoginPage() {
                 error={errors.email}
                 placeholder="admin@vortex.com"
                 autoComplete="email"
+                autoFocus
               />
-              <FormField
+              <PasswordField
                 label="Senha"
                 name="password"
-                type="password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value)
                   setErrors((prev) => ({ ...prev, password: undefined }))
                 }}
                 error={errors.password}
-                placeholder="••••••••"
+                placeholder="Digite sua senha"
                 autoComplete="current-password"
               />
               <button
@@ -181,20 +187,25 @@ export function LoginPage() {
               >
                 {isSubmitting ? 'Entrando...' : 'Entrar'}
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-full"
-                onClick={switchToFirstAccess}
-              >
-                Primeiro acesso
-              </button>
+              <p className="login-switch">
+                É seu primeiro acesso?{' '}
+                <button
+                  type="button"
+                  className="login-link"
+                  onClick={switchToFirstAccess}
+                >
+                  Definir senha
+                </button>
+              </p>
             </form>
           ) : firstAccessStep === 'email' ? (
             <form className="login-form" onSubmit={handleVerifyEmail} noValidate>
-              <h2 className="login-title">Primeiro acesso</h2>
-              <p className="login-subtitle">
-                Informe o e-mail cadastrado pela oficina para definir sua senha.
-              </p>
+              <header className="login-header">
+                <h2 className="login-title">Primeiro acesso</h2>
+                <p className="login-subtitle">
+                  Informe o e-mail cadastrado pela oficina para definir sua senha.
+                </p>
+              </header>
               {submitError && <p className="form-error-banner">{submitError}</p>}
               <FormField
                 label="E-mail"
@@ -208,6 +219,7 @@ export function LoginPage() {
                 error={errors.email}
                 placeholder="seu@email.com"
                 autoComplete="email"
+                autoFocus
               />
               <button
                 type="submit"
@@ -216,46 +228,48 @@ export function LoginPage() {
               >
                 {isSubmitting ? 'Verificando...' : 'Continuar'}
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-full"
-                onClick={switchToLogin}
-              >
-                Voltar ao login
-              </button>
+              <p className="login-switch">
+                <button
+                  type="button"
+                  className="login-link"
+                  onClick={switchToLogin}
+                >
+                  Voltar ao login
+                </button>
+              </p>
             </form>
           ) : (
             <form className="login-form" onSubmit={handleFirstAccessSubmit} noValidate>
-              <h2 className="login-title">Definir senha</h2>
-              <p className="login-subtitle">
-                Olá, <strong>{firstAccessName}</strong>. Defina sua senha para o e-mail{' '}
-                <strong>{email}</strong>.
-              </p>
+              <header className="login-header">
+                <h2 className="login-title">Definir senha</h2>
+                <p className="login-subtitle">
+                  Olá, <strong>{firstAccessName}</strong>. Defina sua senha para o e-mail{' '}
+                  <strong>{email}</strong>.
+                </p>
+              </header>
               {submitError && <p className="form-error-banner">{submitError}</p>}
-              <FormField
+              <PasswordField
                 label="Senha"
                 name="senha"
-                type="password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value)
                   setErrors((prev) => ({ ...prev, senha: undefined }))
                 }}
                 error={errors.senha}
-                placeholder="••••••••"
+                placeholder="Mínimo de 6 caracteres"
                 autoComplete="new-password"
               />
-              <FormField
+              <PasswordField
                 label="Confirmar senha"
                 name="confirmarSenha"
-                type="password"
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value)
                   setErrors((prev) => ({ ...prev, confirmarSenha: undefined }))
                 }}
                 error={errors.confirmarSenha}
-                placeholder="••••••••"
+                placeholder="Repita a senha"
                 autoComplete="new-password"
               />
               <button
@@ -265,20 +279,22 @@ export function LoginPage() {
               >
                 {isSubmitting ? 'Salvando...' : 'Definir senha e entrar'}
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-full"
-                onClick={() => {
-                  setFirstAccessStep('email')
-                  setPassword('')
-                  setConfirmPassword('')
-                  setFirstAccessName('')
-                  setErrors({})
-                  setSubmitError(null)
-                }}
-              >
-                Alterar e-mail
-              </button>
+              <p className="login-switch">
+                <button
+                  type="button"
+                  className="login-link"
+                  onClick={() => {
+                    setFirstAccessStep('email')
+                    setPassword('')
+                    setConfirmPassword('')
+                    setFirstAccessName('')
+                    setErrors({})
+                    setSubmitError(null)
+                  }}
+                >
+                  Alterar e-mail
+                </button>
+              </p>
             </form>
           )}
         </div>

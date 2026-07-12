@@ -4,6 +4,7 @@ import { ProtectedRoute } from '../guards/ProtectedRoute'
 import { customersRoute } from './CustomersRoute'
 import { homeRoute } from './HomeRoute'
 import { myServiceOrdersRoute } from './MyServiceOrdersRoute'
+import { notFoundRoute } from './NotFoundRoute'
 import { profileRoute } from './ProfileRoute'
 import { serviceOrdersRoute } from './ServiceOrdersRoute'
 import { usersRoute } from './UsersRoute'
@@ -24,5 +25,6 @@ export const privateRoutes = (
     {vehiclesRoute}
     {serviceOrdersRoute}
     {usersRoute}
+    {notFoundRoute}
   </Route>
 )

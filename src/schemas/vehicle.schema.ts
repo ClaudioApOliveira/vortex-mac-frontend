@@ -1,6 +1,39 @@
 import { z } from 'zod'
+import { parseAnoFabModelo } from '../utils/masks'
 
 const placaRegex = /^[A-Z]{3}-?\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/
+const ANO_MIN = 1900
+export const ANO_VEICULO_MAX = new Date().getFullYear()
+
+function validateAnoFabModelo(value: string): string | null {
+  if (!/^\d{4}\/\d{4}$/.test(value)) {
+    return 'Informe fabricação e modelo no formato AAAA/AAAA (ex: 2025/2026)'
+  }
+
+  const { anoFabricacao, anoModelo } = parseAnoFabModelo(value)
+
+  if (!Number.isInteger(anoFabricacao) || !Number.isInteger(anoModelo)) {
+    return 'Ano de fabricação ou modelo inválido'
+  }
+
+  if (anoFabricacao < ANO_MIN) {
+    return `Ano de fabricação deve ser a partir de ${ANO_MIN}`
+  }
+
+  if (anoFabricacao > ANO_VEICULO_MAX) {
+    return `Ano de fabricação não pode ser maior que ${ANO_VEICULO_MAX}`
+  }
+
+  if (anoModelo < anoFabricacao) {
+    return 'Ano de modelo não pode ser anterior ao de fabricação'
+  }
+
+  if (anoModelo > anoFabricacao + 1) {
+    return 'Ano de modelo deve ser igual ou um ano após o de fabricação'
+  }
+
+  return null
+}
 
 const optionalText = (max: number, label: string) =>
   z
@@ -27,12 +60,13 @@ export const vehicleFormInputSchema = z.object({
     .max(120, 'Modelo deve ter no máximo 120 caracteres'),
   anoFabricacao: z
     .string()
-    .min(1, 'Ano de fabricação é obrigatório')
-    .refine((val) => /^\d{4}$/.test(val), { message: 'Informe o ano com 4 dígitos' })
-    .refine((val) => {
-      const year = Number(val)
-      return year >= 1900 && year <= 2100
-    }, { message: 'Ano de fabricação inválido' }),
+    .min(1, 'Ano de fabricação / modelo é obrigatório')
+    .superRefine((val, ctx) => {
+      const error = validateAnoFabModelo(val)
+      if (error) {
+        ctx.addIssue({ code: 'custom', message: error })
+      }
+    }),
   motor: optionalText(30, 'Motor'),
   combustivel: optionalText(30, 'Combustível'),
   kmAtual: z
@@ -66,7 +100,7 @@ export function toVehiclePayload(clienteId: number, data: VehicleFormData) {
     placa: data.placa,
     marca: data.marca.trim(),
     modelo: data.modelo.trim(),
-    anoFabricacao: Number(data.anoFabricacao),
+    anoFabricacao: parseAnoFabModelo(data.anoFabricacao).anoFabricacao,
     motor: data.motor?.trim() || undefined,
     combustivel: data.combustivel?.trim() || undefined,
     kmAtual: data.kmAtual ? Number(data.kmAtual) : undefined,
