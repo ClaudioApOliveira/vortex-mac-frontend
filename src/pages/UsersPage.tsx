@@ -1,69 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Shield } from 'lucide-react'
-import { ApiError } from '../api/errors'
-import type { UserRequest } from '../api/types'
-import { createUser, deleteUser, fetchUsers, updateUser } from '../api/users'
 import {
   UserFormModal,
   UserProfileBadge,
 } from '../components/users/UserFormModal'
-import { useCustomers } from '../contexts/CustomerContext'
+import { useCustomers } from '../hooks/useCustomers'
+import { useConfirmDialog } from '../hooks/useConfirmDialog'
+import { useUsers } from '../hooks/useUsers'
 import type { UserFormData } from '../schemas/user.schema'
-import { mapSystemUser } from '../types'
 import type { SystemUser } from '../types'
+import { getSafeApiErrorMessage } from '../utils/apiMessages'
 import './UsersPage.css'
-
-function toUserRequest(data: UserFormData, isEditing: boolean): UserRequest {
-  const request: UserRequest = {
-    email: data.email,
-    nome: data.nome,
-    perfil: data.perfil,
-    ativo: data.ativo,
-    clienteId:
-      data.perfil === 'CLIENTE' && data.clienteId
-        ? Number(data.clienteId)
-        : null,
-  }
-
-  if (data.senha?.trim()) {
-    request.senha = data.senha
-  } else if (!isEditing) {
-    request.senha = data.senha
-  }
-
-  return request
-}
 
 export function UsersPage() {
   const { customers } = useCustomers()
-  const [users, setUsers] = useState<SystemUser[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { users, isLoading, error, addUser, editUser, removeUser } = useUsers()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const loadUsers = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetchUsers()
-      setUsers(response.map(mapSystemUser))
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Não foi possível carregar os usuários.'
-      setError(message)
-      setUsers([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadUsers()
-  }, [loadUsers])
 
   const openCreateModal = () => {
     setSelectedUser(null)
@@ -82,48 +38,42 @@ export function UsersPage() {
     setSubmitError(null)
 
     try {
-      const payload = toUserRequest(data, selectedUser !== null)
-
       if (selectedUser) {
-        const updated = await updateUser(selectedUser.id, payload)
-        const mapped = mapSystemUser(updated)
-        setUsers((prev) =>
-          prev.map((item) => (item.id === selectedUser.id ? mapped : item)),
-        )
+        await editUser(selectedUser.id, data)
       } else {
-        const created = await createUser(payload)
-        setUsers((prev) => [mapSystemUser(created), ...prev])
+        await addUser(data)
       }
 
       setIsModalOpen(false)
       setSelectedUser(null)
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : selectedUser
+      setSubmitError(
+        getSafeApiErrorMessage(
+          err,
+          selectedUser
             ? 'Não foi possível atualizar o usuário.'
-            : 'Não foi possível cadastrar o usuário.'
-      setSubmitError(message)
+            : 'Não foi possível cadastrar o usuário.',
+        ),
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (user: SystemUser) => {
-    const confirmed = window.confirm(`Excluir o usuário ${user.nome}?`)
+    const confirmed = await confirm({
+      title: 'Excluir usuário',
+      message: `Excluir o usuário ${user.nome}? Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    })
     if (!confirmed) return
 
     setSubmitError(null)
     try {
-      await deleteUser(user.id)
-      setUsers((prev) => prev.filter((item) => item.id !== user.id))
+      await removeUser(user.id)
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : 'Não foi possível excluir o usuário.'
-      setSubmitError(message)
+      setSubmitError(getSafeApiErrorMessage(err, 'Não foi possível excluir o usuário.'))
     }
   }
 
@@ -229,6 +179,8 @@ export function UsersPage() {
         user={selectedUser}
         customers={customers}
       />
+
+      <ConfirmDialog />
     </div>
   )
 }

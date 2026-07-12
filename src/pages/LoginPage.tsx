@@ -8,6 +8,13 @@ import {
   firstAccessPasswordSchema,
 } from '../schemas/firstAccess.schema'
 import { useAuth } from '../contexts/AuthContext'
+import { ROUTES } from '../routes/paths'
+import {
+  FIRST_ACCESS_INELIGIBLE_MESSAGE,
+  getFirstAccessErrorMessage,
+  getLoginErrorMessage,
+} from '../utils/apiMessages'
+import { mapZodErrors } from '../utils/mapZodErrors'
 import { FormField } from '../components/ui/FormField'
 import { Logo } from '../components/ui/Logo'
 import './LoginPage.css'
@@ -59,25 +66,16 @@ export function LoginPage() {
     const result = loginSchema.safeParse({ email, password })
 
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as string
-        if (!fieldErrors[field]) fieldErrors[field] = issue.message
-      }
-      setErrors(fieldErrors)
+      setErrors(mapZodErrors(result.error))
       return
     }
 
     setIsSubmitting(true)
     try {
       await login(result.data.email, result.data.password)
-      navigate('/')
+      navigate(ROUTES.home)
     } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? error.message
-          : 'Não foi possível entrar. Verifique se o backend está rodando.'
-      setSubmitError(message)
+      setSubmitError(getLoginErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }
@@ -103,11 +101,11 @@ export function LoginPage() {
       setFirstAccessStep('password')
       setErrors({})
     } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? error.message
-          : 'Não foi possível verificar o e-mail. Tente novamente.'
-      setSubmitError(message)
+      if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
+        setSubmitError(FIRST_ACCESS_INELIGIBLE_MESSAGE)
+      } else {
+        setSubmitError(getFirstAccessErrorMessage(error))
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -123,25 +121,16 @@ export function LoginPage() {
     })
 
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
-      for (const issue of result.error.issues) {
-        const field = issue.path[0] as string
-        if (!fieldErrors[field]) fieldErrors[field] = issue.message
-      }
-      setErrors(fieldErrors)
+      setErrors(mapZodErrors(result.error))
       return
     }
 
     setIsSubmitting(true)
     try {
       await completeFirstAccess(email, result.data.senha, result.data.confirmarSenha)
-      navigate('/')
+      navigate(ROUTES.home)
     } catch (error) {
-      const message =
-        error instanceof ApiError
-          ? error.message
-          : 'Não foi possível definir a senha. Tente novamente.'
-      setSubmitError(message)
+      setSubmitError(getFirstAccessErrorMessage(error))
     } finally {
       setIsSubmitting(false)
     }

@@ -14,6 +14,7 @@ import {
   type ChangePasswordFormData,
   type UpdateProfileFormData,
 } from '../schemas/profile.schema'
+import { mapZodErrors } from '../utils/mapZodErrors'
 import './ProfilePage.css'
 
 const emptyPasswordForm: ChangePasswordFormData = {
@@ -25,21 +26,8 @@ const emptyPasswordForm: ChangePasswordFormData = {
 type ProfileErrors = Partial<Record<keyof UpdateProfileFormData, string>>
 type PasswordErrors = Partial<Record<keyof ChangePasswordFormData, string>>
 
-function mapZodErrors<T extends Record<string, string | undefined>>(
-  error: { issues: Array<{ path: PropertyKey[]; message: string }> },
-): T {
-  const errors = {} as T
-  for (const issue of error.issues) {
-    const path = issue.path[0] as keyof T
-    if (!errors[path]) {
-      errors[path] = issue.message as T[keyof T]
-    }
-  }
-  return errors
-}
-
 export function ProfilePage() {
-  const { user, refreshUser } = useAuth()
+  const { user, syncUser } = useAuth()
   const [profileForm, setProfileForm] = useState<UpdateProfileFormData>({
     nome: '',
     email: '',
@@ -98,8 +86,8 @@ export function ProfilePage() {
     setIsSavingProfile(true)
 
     try {
-      await updateCurrentUserProfile(result.data)
-      await refreshUser()
+      const updated = await updateCurrentUserProfile(result.data)
+      syncUser(updated)
       setProfileSuccess('Perfil atualizado com sucesso.')
     } catch (error) {
       setProfileError(

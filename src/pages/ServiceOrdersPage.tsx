@@ -7,6 +7,7 @@ import '../components/serviceOrders/ServiceOrderStatusBadge.css'
 import { Pagination } from '../components/ui/Pagination'
 import '../components/ui/Pagination.css'
 import { DEFAULT_PAGE_SIZE } from '../constants/pagination'
+import { useConfirmDialog } from '../hooks/useConfirmDialog'
 import {
   mapServiceOrdersPageItems,
   useServiceOrderMutations,
@@ -35,6 +36,7 @@ export function ServiceOrdersPage() {
   } = useServiceOrdersList(page, pageSize)
   const { addServiceOrder, editServiceOrder, removeServiceOrder, isMutating } =
     useServiceOrderMutations()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const serviceOrders = useMemo(() => mapServiceOrdersPageItems(items), [items])
 
@@ -87,9 +89,12 @@ export function ServiceOrdersPage() {
   }
 
   const handleDelete = async (serviceOrder: ServiceOrder) => {
-    const confirmed = window.confirm(
-      `Excluir a OS de ${serviceOrder.clienteNome} (${formatServiceOrderDateTime(serviceOrder.data, serviceOrder.hora)})?`,
-    )
+    const confirmed = await confirm({
+      title: 'Excluir ordem de serviço',
+      message: `Excluir a OS de ${serviceOrder.clienteNome} (${formatServiceOrderDateTime(serviceOrder.data, serviceOrder.hora)})?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    })
     if (!confirmed) return
 
     setSubmitError(null)
@@ -222,6 +227,8 @@ export function ServiceOrdersPage() {
         isSubmitting={isMutating}
         serviceOrder={selectedServiceOrder}
       />
+
+      <ConfirmDialog />
     </div>
   )
 }

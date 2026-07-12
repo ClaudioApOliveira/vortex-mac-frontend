@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useCustomers } from '../../contexts/CustomerContext'
+import { useCustomers } from '../../hooks/useCustomers'
 import {
   emptyVehicleForm,
   vehicleFormInputSchema,
@@ -9,6 +9,7 @@ import { displayPlaca } from '../../utils/masks'
 import type { Vehicle } from '../../types'
 import { Modal } from '../ui/Modal'
 import { VehicleFormFields } from './VehicleFormFields'
+import { mapZodErrors } from '../../utils/mapZodErrors'
 import '../ui/FormModal.css'
 import './VehicleFormFields.css'
 
@@ -21,21 +22,6 @@ interface VehicleFormModalProps {
 }
 
 type FormErrors = Partial<Record<keyof VehicleFormData, string>>
-
-function mapZodErrors(
-  error: ReturnType<typeof vehicleFormInputSchema.safeParse>['error'],
-): FormErrors {
-  const errors: FormErrors = {}
-  if (!error) return errors
-
-  for (const issue of error.issues) {
-    const path = issue.path[0] as keyof VehicleFormData
-    if (!errors[path]) {
-      errors[path] = issue.message
-    }
-  }
-  return errors
-}
 
 function toFormData(vehicle: Vehicle): VehicleFormData {
   return {

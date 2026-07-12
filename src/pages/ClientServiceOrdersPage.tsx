@@ -12,6 +12,7 @@ import {
   useMyServiceOrderMutations,
   useMyServiceOrdersList,
 } from '../hooks/useMyServiceOrders'
+import { useConfirmDialog } from '../hooks/useConfirmDialog'
 import { usePaginationState } from '../hooks/usePaginationState'
 import { mapServiceOrder } from '../types'
 import type { ServiceOrder } from '../types'
@@ -93,6 +94,7 @@ export function ClientServiceOrdersPage() {
   } = useMyServiceOrdersList(page, pageSize)
   const { approveMyServiceOrder, rejectMyServiceOrder, isDeciding } =
     useMyServiceOrderMutations()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
 
   const serviceOrders = useMemo(() => items.map(mapServiceOrder), [items])
   const pendingOnPage = useMemo(
@@ -148,9 +150,12 @@ export function ClientServiceOrdersPage() {
   const handleApprove = async () => {
     if (!selectedOrder) return
 
-    const confirmed = window.confirm(
-      `Aprovar o orçamento da OS #${selectedOrder.id} no valor de ${formatCurrency(selectedOrder.precoTotal)}?`,
-    )
+    const confirmed = await confirm({
+      title: 'Aprovar orçamento',
+      message: `Aprovar o orçamento da OS #${selectedOrder.id} no valor de ${formatCurrency(selectedOrder.precoTotal)}?`,
+      confirmLabel: 'Aprovar',
+      variant: 'primary',
+    })
     if (!confirmed) return
 
     setDecisionError(null)
@@ -169,9 +174,12 @@ export function ClientServiceOrdersPage() {
   const handleReject = async () => {
     if (!selectedOrder) return
 
-    const confirmed = window.confirm(
-      `Rejeitar o orçamento da OS #${selectedOrder.id}? Esta ação cancela o orçamento.`,
-    )
+    const confirmed = await confirm({
+      title: 'Rejeitar orçamento',
+      message: `Rejeitar o orçamento da OS #${selectedOrder.id}? Esta ação cancela o orçamento.`,
+      confirmLabel: 'Rejeitar',
+      variant: 'danger',
+    })
     if (!confirmed) return
 
     setDecisionError(null)
@@ -266,6 +274,8 @@ export function ClientServiceOrdersPage() {
         onReject={() => void handleReject()}
         statusHistorySource="client"
       />
+
+      <ConfirmDialog />
     </div>
   )
 }

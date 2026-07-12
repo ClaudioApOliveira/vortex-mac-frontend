@@ -1,19 +1,33 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Car } from 'lucide-react'
-import { ApiError } from '../api/errors'
 import { VehicleFormModal } from '../components/vehicles/VehicleFormModal'
-import { useVehicles } from '../contexts/VehicleContext'
+import { Pagination } from '../components/ui/Pagination'
+import '../components/ui/Pagination.css'
+import { DEFAULT_PAGE_SIZE } from '../constants/pagination'
+import { useVehicles } from '../hooks/useVehicles'
+import { useConfirmDialog } from '../hooks/useConfirmDialog'
+import { usePaginationState } from '../hooks/usePaginationState'
 import type { VehicleFormData } from '../schemas/vehicle.schema'
 import type { Vehicle } from '../types'
+import { getSafeApiErrorMessage } from '../utils/apiMessages'
 import { displayPlaca } from '../utils/masks'
 import './CustomersPage.css'
 
 export function VehiclesPage() {
   const { vehicles, isLoading, error, addVehicle, editVehicle, removeVehicle } = useVehicles()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
+  const { page, pageSize, setPage, setPageSize } = usePaginationState(DEFAULT_PAGE_SIZE)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const totalElements = vehicles.length
+  const totalPages = Math.max(1, Math.ceil(totalElements / pageSize))
+  const paginatedVehicles = useMemo(
+    () => vehicles.slice(page * pageSize, page * pageSize + pageSize),
+    [vehicles, page, pageSize],
+  )
 
   const openCreateModal = () => {
     setSelectedVehicle(null)
@@ -40,31 +54,33 @@ export function VehiclesPage() {
       setIsModalOpen(false)
       setSelectedVehicle(null)
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : selectedVehicle
+      setSubmitError(
+        getSafeApiErrorMessage(
+          err,
+          selectedVehicle
             ? 'Não foi possível atualizar o veículo.'
-            : 'Não foi possível cadastrar o veículo.'
-      setSubmitError(message)
+            : 'Não foi possível cadastrar o veículo.',
+        ),
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleDelete = async (vehicle: Vehicle) => {
-    const confirmed = window.confirm(
-      `Excluir o veículo ${displayPlaca(vehicle.placa)} (${vehicle.marca} ${vehicle.modelo})?`,
-    )
+    const confirmed = await confirm({
+      title: 'Excluir veículo',
+      message: `Excluir o veículo ${displayPlaca(vehicle.placa)} (${vehicle.marca} ${vehicle.modelo})?`,
+      confirmLabel: 'Excluir',
+      variant: 'danger',
+    })
     if (!confirmed) return
 
     setSubmitError(null)
     try {
       await removeVehicle(vehicle.id)
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Não foi possível excluir o veículo.'
-      setSubmitError(message)
+      setSubmitError(getSafeApiErrorMessage(err, 'Não foi possível excluir o veículo.'))
     }
   }
 
@@ -99,65 +115,77 @@ export function VehiclesPage() {
           </button>
         </div>
       ) : (
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Placa</th>
-                <th>Marca / Modelo</th>
-                <th>Ano</th>
-                <th>Proprietário</th>
-                <th>Motor</th>
-                <th>Combustível</th>
-                <th>KM atual</th>
-                <th>Cadastrado em</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vehicles.map((vehicle) => (
-                <tr key={vehicle.id}>
-                  <td>
-                    <span className="plate-badge">{displayPlaca(vehicle.placa)}</span>
-                  </td>
-                  <td>
-                    <strong>
-                      {vehicle.marca} {vehicle.modelo}
-                    </strong>
-                  </td>
-                  <td>{vehicle.anoFabricacao}</td>
-                  <td>{vehicle.clienteNome}</td>
-                  <td>{vehicle.motor ?? '—'}</td>
-                  <td>{vehicle.combustivel ?? '—'}</td>
-                  <td>
-                    {vehicle.kmAtual !== undefined
-                      ? vehicle.kmAtual.toLocaleString('pt-BR')
-                      : '—'}
-                  </td>
-                  <td>{new Date(vehicle.criadoEm).toLocaleDateString('pt-BR')}</td>
-                  <td>
-                    <div className="table-actions">
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => openEditModal(vehicle)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(vehicle)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </td>
+        <>
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Placa</th>
+                  <th>Marca / Modelo</th>
+                  <th>Ano</th>
+                  <th>Proprietário</th>
+                  <th>Motor</th>
+                  <th>Combustível</th>
+                  <th>KM atual</th>
+                  <th>Cadastrado em</th>
+                  <th>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {paginatedVehicles.map((vehicle) => (
+                  <tr key={vehicle.id}>
+                    <td>
+                      <span className="plate-badge">{displayPlaca(vehicle.placa)}</span>
+                    </td>
+                    <td>
+                      <strong>
+                        {vehicle.marca} {vehicle.modelo}
+                      </strong>
+                    </td>
+                    <td>{vehicle.anoFabricacao}</td>
+                    <td>{vehicle.clienteNome}</td>
+                    <td>{vehicle.motor ?? '—'}</td>
+                    <td>{vehicle.combustivel ?? '—'}</td>
+                    <td>
+                      {vehicle.kmAtual !== undefined
+                        ? vehicle.kmAtual.toLocaleString('pt-BR')
+                        : '—'}
+                    </td>
+                    <td>{new Date(vehicle.criadoEm).toLocaleDateString('pt-BR')}</td>
+                    <td>
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openEditModal(vehicle)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(vehicle)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            totalElements={totalElements}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            isLoading={isLoading}
+          />
+        </>
       )}
 
       <VehicleFormModal
@@ -170,6 +198,8 @@ export function VehiclesPage() {
         isSubmitting={isSubmitting}
         vehicle={selectedVehicle}
       />
+
+      <ConfirmDialog />
     </div>
   )
 }

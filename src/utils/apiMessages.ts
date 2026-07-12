@@ -26,6 +26,10 @@ export function getLoginErrorMessage(error: unknown) {
     return 'E-mail ou senha incorretos.'
   }
 
+  if (error instanceof TypeError) {
+    return 'Não foi possível conectar ao servidor. Verifique se o backend está rodando.'
+  }
+
   return getSafeApiErrorMessage(error, 'Não foi possível entrar. Tente novamente.')
 }
 

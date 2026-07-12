@@ -93,6 +93,22 @@ export async function fetchMyServiceOrdersPage(page: number, size: number) {
   )
 }
 
+export async function fetchAllMyServiceOrders() {
+  const pageSize = 50
+  let page = 0
+  let totalPages = 1
+  const orders: ServiceOrderResponse[] = []
+
+  while (page < totalPages) {
+    const response = await fetchMyServiceOrdersPage(page, pageSize)
+    orders.push(...response.content)
+    totalPages = response.totalPages
+    page += 1
+  }
+
+  return orders
+}
+
 export async function fetchMyServiceOrder(id: number) {
   return apiRequest<ServiceOrderResponse>(`/api/auth/me/ordens-servico/${id}`)
 }

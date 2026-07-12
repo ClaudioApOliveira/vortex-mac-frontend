@@ -6,6 +6,7 @@ import {
 } from '../../schemas/user.schema'
 import type { Customer, SystemUser } from '../../types'
 import { getProfileLabel } from '../../utils/permissions'
+import { mapZodErrors } from '../../utils/mapZodErrors'
 import { FormField } from '../ui/FormField'
 import { Modal } from '../ui/Modal'
 import '../ui/FormModal.css'
@@ -30,17 +31,6 @@ const emptyForm: UserFormData = {
 }
 
 type FormErrors = Partial<Record<keyof UserFormData, string>>
-
-function mapZodErrors(error: { issues: Array<{ path: PropertyKey[]; message: string }> }): FormErrors {
-  const errors: FormErrors = {}
-  for (const issue of error.issues) {
-    const path = issue.path[0] as keyof UserFormData
-    if (!errors[path]) {
-      errors[path] = issue.message
-    }
-  }
-  return errors
-}
 
 function toFormData(user: SystemUser): UserFormData {
   return {

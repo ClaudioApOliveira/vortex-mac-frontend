@@ -7,13 +7,19 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   fetchCurrentUser,
   loginRequest,
   logoutRequest,
   primeiroAcessoRequest,
 } from '../api/auth'
-import { isUnauthorizedError, refreshAccessToken } from '../api/client'
+import {
+  isUnauthorizedError,
+  refreshAccessToken,
+  resetSessionExpiredGuard,
+  setSessionExpiredHandler,
+} from '../api/client'
 import {
   clearTokens,
   getAccessToken,
@@ -21,6 +27,9 @@ import {
   hasValidSession,
   shouldRefreshAccessToken,
 } from '../api/tokenStorage'
+import type { UserResponse } from '../api/types'
+import { queryClient } from '../lib/queryClient'
+import { ROUTES } from '../routes/paths'
 import { mapUser } from '../types'
 import type { User } from '../types'
 
@@ -34,6 +43,7 @@ interface AuthContextValue {
     senha: string,
     confirmarSenha: string,
   ) => Promise<void>
+  syncUser: (response: UserResponse) => void
   refreshUser: () => Promise<void>
   logout: () => Promise<void>
 }
@@ -42,27 +52,44 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 const TOKEN_CHECK_INTERVAL_MS = 30_000
 
+function clearSessionState() {
+  clearTokens()
+  queryClient.clear()
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const handleSessionExpired = useCallback(() => {
+    clearSessionState()
+    setUser(null)
+    navigate(ROUTES.login, { replace: true })
+  }, [navigate])
+
+  useEffect(() => {
+    setSessionExpiredHandler(handleSessionExpired)
+    return () => setSessionExpiredHandler(null)
+  }, [handleSessionExpired])
+
   const loadUser = useCallback(async () => {
     if (!hasValidSession()) {
-      clearTokens()
+      clearSessionState()
       setUser(null)
       return
     }
 
     if (!getAccessToken() || shouldRefreshAccessToken()) {
       if (!getRefreshToken()) {
-        clearTokens()
+        clearSessionState()
         setUser(null)
         return
       }
 
       const refreshed = await refreshAccessToken()
       if (!refreshed || !getAccessToken()) {
-        clearTokens()
+        clearSessionState()
         setUser(null)
         return
       }
@@ -71,8 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const currentUser = await fetchCurrentUser()
       setUser(mapUser(currentUser))
+      resetSessionExpiredGuard()
     } catch (error) {
-      clearTokens()
+      clearSessionState()
       setUser(null)
       if (!isUnauthorizedError(error)) {
         console.error('Falha ao carregar usuário autenticado', error)
@@ -100,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await loginRequest(email, password)
     const currentUser = await fetchCurrentUser()
     setUser(mapUser(currentUser))
+    resetSessionExpiredGuard()
   }, [])
 
   const completeFirstAccess = useCallback(
@@ -107,21 +136,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await primeiroAcessoRequest(email, senha, confirmarSenha)
       const currentUser = await fetchCurrentUser()
       setUser(mapUser(currentUser))
+      resetSessionExpiredGuard()
     },
     [],
   )
 
+  const syncUser = useCallback((response: UserResponse) => {
+    setUser(mapUser(response))
+  }, [])
+
   const refreshUser = useCallback(async () => {
     const currentUser = await fetchCurrentUser()
     setUser(mapUser(currentUser))
+    resetSessionExpiredGuard()
   }, [])
 
   const logout = useCallback(async () => {
     try {
       await logoutRequest()
     } finally {
-      clearTokens()
+      clearSessionState()
       setUser(null)
+      resetSessionExpiredGuard()
     }
   }, [])
 
@@ -132,10 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       completeFirstAccess,
+      syncUser,
       refreshUser,
       logout,
     }),
-    [user, isLoading, login, completeFirstAccess, refreshUser, logout],
+    [user, isLoading, login, completeFirstAccess, syncUser, refreshUser, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
