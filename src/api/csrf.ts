@@ -1,6 +1,9 @@
 export const CSRF_COOKIE_NAME = 'csrf_token'
 export const CSRF_HEADER_NAME = 'X-CSRF-Token'
 
+// O cookie csrf_token precisa ter Path=/ no backend para ser legível aqui.
+// Cookies com Path=/api/auth não aparecem em document.cookie na SPA (path /).
+
 const CSRF_PROTECTED_ROUTES = new Set(['/api/auth/refresh', '/api/auth/logout'])
 
 export function getCsrfTokenFromCookie(): string | null {
