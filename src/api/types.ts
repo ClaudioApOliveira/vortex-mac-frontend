@@ -12,10 +12,11 @@ export type TipoPessoa = 'PESSOA_FISICA' | 'PESSOA_JURIDICA'
 
 export interface TokenResponse {
   accessToken: string
-  refreshToken: string
+  refreshToken?: string
   tipo: string
   accessTokenExpiraEmSegundos: number
   refreshTokenExpiraEmSegundos: number
+  deveDefinirSenha?: boolean
 }
 
 export interface UserResponse {

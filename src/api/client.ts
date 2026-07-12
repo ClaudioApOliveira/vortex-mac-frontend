@@ -3,8 +3,6 @@ import { ApiError, parseApiData, parseApiError } from './errors'
 import {
   clearTokens,
   getAccessToken,
-  getRefreshToken,
-  isRefreshTokenExpired,
   setTokensFromResponse,
   shouldRefreshAccessToken,
 } from './tokenStorage'
@@ -14,6 +12,8 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
   auth?: boolean
 }
+
+const FETCH_CREDENTIALS: RequestCredentials = 'include'
 
 let refreshPromise: Promise<boolean> | null = null
 let sessionExpiredHandler: (() => void) | null = null
@@ -35,39 +35,33 @@ function notifySessionExpired() {
 
 async function parseRefreshResponse(response: Response): Promise<TokenResponse> {
   const data = await parseApiData<TokenResponse>(response)
-  if (!data?.accessToken || !data?.refreshToken) {
+  if (!data?.accessToken) {
     throw new ApiError(401, 'Resposta de autenticação inválida.')
   }
   return data
 }
 
-export async function refreshAccessToken(): Promise<boolean> {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken || isRefreshTokenExpired()) {
-    clearTokens()
-    notifySessionExpired()
-    return false
-  }
-
-  const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  })
-
-  if (!response.ok) {
-    clearTokens()
-    notifySessionExpired()
-    return false
-  }
+export async function refreshAccessToken(options?: { notifyOnFailure?: boolean }) {
+  const notifyOnFailure = options?.notifyOnFailure ?? true
 
   try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: FETCH_CREDENTIALS,
+    })
+
+    if (!response.ok) {
+      clearTokens()
+      if (notifyOnFailure) notifySessionExpired()
+      return false
+    }
+
     const data = await parseRefreshResponse(response)
     setTokensFromResponse(data)
     return true
   } catch {
     clearTokens()
-    notifySessionExpired()
+    if (notifyOnFailure) notifySessionExpired()
     return false
   }
 }
@@ -82,14 +76,7 @@ async function ensureRefreshed(): Promise<boolean> {
 }
 
 async function ensureValidAccessToken() {
-  if (!getAccessToken()) {
-    if (getRefreshToken()) {
-      return ensureRefreshed()
-    }
-    return false
-  }
-
-  if (shouldRefreshAccessToken()) {
+  if (!getAccessToken() || shouldRefreshAccessToken()) {
     return ensureRefreshed()
   }
 
@@ -129,13 +116,14 @@ export async function apiRequest<T>(
   const execute = () =>
     fetch(`${API_BASE_URL}${path}`, {
       ...rest,
+      credentials: FETCH_CREDENTIALS,
       headers: requestHeaders,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     })
 
   let response = await execute()
 
-  if (response.status === 401 && auth && getRefreshToken()) {
+  if (response.status === 401 && auth) {
     const refreshed = await ensureRefreshed()
     if (refreshed) {
       const token = getAccessToken()

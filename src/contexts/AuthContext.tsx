@@ -23,8 +23,6 @@ import {
 import {
   clearTokens,
   getAccessToken,
-  getRefreshToken,
-  hasValidSession,
   shouldRefreshAccessToken,
 } from '../api/tokenStorage'
 import type { UserResponse } from '../api/types'
@@ -74,20 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [handleSessionExpired])
 
   const loadUser = useCallback(async () => {
-    if (!hasValidSession()) {
-      clearSessionState()
-      setUser(null)
-      return
-    }
-
     if (!getAccessToken() || shouldRefreshAccessToken()) {
-      if (!getRefreshToken()) {
-        clearSessionState()
-        setUser(null)
-        return
-      }
-
-      const refreshed = await refreshAccessToken()
+      const refreshed = await refreshAccessToken({ notifyOnFailure: false })
       if (!refreshed || !getAccessToken()) {
         clearSessionState()
         setUser(null)
@@ -116,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return
 
     const intervalId = window.setInterval(() => {
-      if (shouldRefreshAccessToken() && getRefreshToken()) {
+      if (shouldRefreshAccessToken()) {
         void refreshAccessToken()
       }
     }, TOKEN_CHECK_INTERVAL_MS)
