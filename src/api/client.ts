@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config/api'
+import { applyCsrfHeader, requiresCsrfHeader } from './csrf'
 import { ApiError, parseApiData, parseApiError } from './errors'
 import {
   clearTokens,
@@ -45,9 +46,13 @@ export async function refreshAccessToken(options?: { notifyOnFailure?: boolean }
   const notifyOnFailure = options?.notifyOnFailure ?? true
 
   try {
+    const headers = new Headers()
+    applyCsrfHeader(headers)
+
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: 'POST',
       credentials: FETCH_CREDENTIALS,
+      headers,
     })
 
     if (!response.ok) {
@@ -111,6 +116,10 @@ export async function apiRequest<T>(
       throw new ApiError(401, 'Não autenticado.')
     }
     requestHeaders.set('Authorization', `Bearer ${token}`)
+  }
+
+  if (requiresCsrfHeader(path, rest.method)) {
+    applyCsrfHeader(requestHeaders)
   }
 
   const execute = () =>
