@@ -352,8 +352,8 @@ export function ServiceOrderFormModal({
             )}
             {user?.perfil === 'TECNICO' && !isTechnicianWithApprovedStatus && (
               <p className="field-hint">
-                Técnicos não podem aprovar orçamentos. A aprovação é feita pelo cliente ou
-                administrador.
+                Técnicos não podem aprovar orçamentos. A aprovação é feita pelo cliente,
+                gerente ou administrador.
               </p>
             )}
             {errors.status && <span className="field-error">{errors.status}</span>}

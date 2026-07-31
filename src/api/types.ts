@@ -1,4 +1,4 @@
-export type UserProfile = 'ADMIN' | 'TECNICO' | 'CLIENTE'
+export type UserProfile = 'ADMIN' | 'GERENTE' | 'TECNICO' | 'CLIENTE'
 
 export interface PageResponse<T> {
   content: T[]
@@ -179,7 +179,12 @@ export type ServiceOrderStatus =
   | 'CONCLUIDO'
   | 'CANCELADO'
 
-export type ServiceOrderStatusHistoryOrigin = 'CLIENTE' | 'ADMIN' | 'TECNICO' | 'SISTEMA'
+export type ServiceOrderStatusHistoryOrigin =
+  | 'CLIENTE'
+  | 'ADMIN'
+  | 'GERENTE'
+  | 'TECNICO'
+  | 'SISTEMA'
 
 export interface ServiceOrderStatusHistoryResponse {
   id: number

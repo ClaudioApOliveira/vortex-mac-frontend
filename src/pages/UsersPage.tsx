@@ -4,15 +4,18 @@ import {
   UserFormModal,
   UserProfileBadge,
 } from '../components/users/UserFormModal'
+import { useAuth } from '../contexts/AuthContext'
 import { useCustomers } from '../hooks/useCustomers'
 import { useConfirmDialog } from '../hooks/useConfirmDialog'
 import { useUsers } from '../hooks/useUsers'
 import type { UserFormData } from '../schemas/user.schema'
 import type { SystemUser } from '../types'
 import { getSafeApiErrorMessage } from '../utils/apiMessages'
+import { canManageAdminUsers } from '../utils/permissions'
 import './UsersPage.css'
 
 export function UsersPage() {
+  const { user: loggedUser } = useAuth()
   const { customers } = useCustomers()
   const { users, isLoading, error, addUser, editUser, removeUser } = useUsers()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -82,6 +85,9 @@ export function UsersPage() {
     return customers.find((customer) => customer.id === clienteId)?.nome ?? '—'
   }
 
+  const canEditUser = (user: SystemUser) =>
+    user.perfil !== 'ADMIN' || canManageAdminUsers(loggedUser)
+
   return (
     <div className="page">
       <header className="page-header">
@@ -144,22 +150,26 @@ export function UsersPage() {
                     </span>
                   </td>
                   <td>
-                    <div className="table-actions">
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => openEditModal(user)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(user)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
+                    {canEditUser(user) ? (
+                      <div className="table-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => openEditModal(user)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(user)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="table-actions-empty">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

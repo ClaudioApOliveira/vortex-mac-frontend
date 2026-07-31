@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const profileEnum = z.enum(['ADMIN', 'TECNICO', 'CLIENTE'])
+const profileEnum = z.enum(['ADMIN', 'GERENTE', 'TECNICO', 'CLIENTE'])
 
 const baseUserFields = {
   email: z

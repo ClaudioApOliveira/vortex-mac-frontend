@@ -51,6 +51,7 @@ export function getServiceOrderItemTypeLabel(tipo: 'PECA' | 'SERVICO') {
 const STATUS_HISTORY_ORIGIN_LABELS: Record<ServiceOrderStatusHistoryOrigin, string> = {
   CLIENTE: 'Cliente',
   ADMIN: 'Administrador',
+  GERENTE: 'Gerente',
   TECNICO: 'Técnico',
   SISTEMA: 'Sistema',
 }

@@ -4,8 +4,9 @@ import {
   editUserSchema,
   type UserFormData,
 } from '../../schemas/user.schema'
+import { useAuth } from '../../contexts/AuthContext'
 import type { Customer, SystemUser } from '../../types'
-import { getProfileLabel } from '../../utils/permissions'
+import { canManageAdminUsers, getProfileLabel } from '../../utils/permissions'
 import { mapZodErrors } from '../../utils/mapZodErrors'
 import { FormField } from '../ui/FormField'
 import { Modal } from '../ui/Modal'
@@ -51,6 +52,8 @@ export function UserFormModal({
   user = null,
   customers,
 }: UserFormModalProps) {
+  const { user: loggedUser } = useAuth()
+  const allowAdminProfile = canManageAdminUsers(loggedUser)
   const isEditing = user !== null
   const [form, setForm] = useState<UserFormData>(emptyForm)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -161,7 +164,8 @@ export function UserFormModal({
               updateField('perfil', e.target.value as UserFormData['perfil'])
             }
           >
-            <option value="ADMIN">Administrador</option>
+            {allowAdminProfile && <option value="ADMIN">Administrador</option>}
+            <option value="GERENTE">Gerente</option>
             <option value="TECNICO">Técnico</option>
             <option value="CLIENTE">Cliente</option>
           </select>
