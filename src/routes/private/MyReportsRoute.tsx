@@ -4,18 +4,18 @@ import { RoleRoute } from '../guards/RoleRoute'
 import { ROUTES } from '../paths'
 import { canViewMyServiceOrders } from '../../utils/permissions'
 
-const ClientServiceOrdersPage = lazyPage(() =>
-  import('../../pages/serviceOrders/ClientServiceOrdersPage').then((module) => ({
-    default: module.ClientServiceOrdersPage,
+const ClientReportsPage = lazyPage(() =>
+  import('../../pages/serviceOrders/ClientReportsPage').then((module) => ({
+    default: module.ClientReportsPage,
   })),
 )
 
-export const myServiceOrdersRoute = (
+export const myReportsRoute = (
   <Route
-    path={ROUTES.myServiceOrders}
+    path={ROUTES.myReports}
     element={
       <RoleRoute allow={canViewMyServiceOrders}>
-        <ClientServiceOrdersPage />
+        <ClientReportsPage />
       </RoleRoute>
     }
   />

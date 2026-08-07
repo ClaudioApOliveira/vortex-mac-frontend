@@ -3,7 +3,7 @@ import { lazyPage } from '../lazyPage'
 import { ROUTES } from '../paths'
 
 const ProfilePage = lazyPage(() =>
-  import('../../pages/ProfilePage').then((module) => ({ default: module.ProfilePage })),
+  import('../../pages/profile/ProfilePage').then((module) => ({ default: module.ProfilePage })),
 )
 
 export const profileRoute = <Route path={ROUTES.profile} element={<ProfilePage />} />

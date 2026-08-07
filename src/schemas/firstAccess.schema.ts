@@ -15,6 +15,9 @@ export const firstAccessPasswordSchema = z
       .min(6, 'A senha deve ter no mínimo 6 caracteres')
       .max(100, 'A senha deve ter no máximo 100 caracteres'),
     confirmarSenha: z.string().min(1, 'Confirme a senha'),
+    lgpdAceite: z.literal(true, {
+      error: 'Aceite a Política de Privacidade para continuar',
+    }),
   })
   .refine((data) => data.senha === data.confirmarSenha, {
     message: 'As senhas não conferem',

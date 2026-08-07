@@ -28,3 +28,13 @@ export async function deleteCustomer(id: number) {
     method: 'DELETE',
   })
 }
+
+export async function anonymizeCustomer(id: number) {
+  return apiRequest<CustomerResponse>(`/api/clientes/${id}/anonimizar`, {
+    method: 'POST',
+  })
+}
+
+export async function fetchDeletionRequests() {
+  return apiRequest<CustomerResponse[]>('/api/clientes/solicitacoes-exclusao')
+}

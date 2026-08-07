@@ -1,20 +1,28 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import {
+  acceptLgpdPolicy,
   changeCurrentUserPassword,
+  exportMyPersonalData,
+  requestPersonalDataDeletion,
   updateCurrentUserProfile,
-} from '../api/auth'
-import { ApiError } from '../api/errors'
-import { UserProfileBadge } from '../components/users/UserFormModal'
-import '../components/users/UserFormModal.css'
-import { FormField } from '../components/ui/FormField'
-import { useAuth } from '../contexts/AuthContext'
+} from '../../api/auth'
+import { ApiError } from '../../api/errors'
+import { UserProfileBadge } from '../../components/users/UserFormModal'
+import '../../components/users/UserFormModal.css'
+import { FormField } from '../../components/ui/FormField'
+import { LGPD_POLICY_VERSION } from '../../constants/lgpd'
+import { useAuth } from '../../contexts/AuthContext'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
+import { ROUTES } from '../../routes/paths'
 import {
   changePasswordSchema,
   updateProfileSchema,
   type ChangePasswordFormData,
   type UpdateProfileFormData,
-} from '../schemas/profile.schema'
-import { mapZodErrors } from '../utils/mapZodErrors'
+} from '../../schemas/profile.schema'
+import { mapZodErrors } from '../../utils/mapZodErrors'
+import { formatDateTime } from '../../utils/serviceOrder'
 import './ProfilePage.css'
 
 const emptyPasswordForm: ChangePasswordFormData = {
@@ -28,6 +36,7 @@ type PasswordErrors = Partial<Record<keyof ChangePasswordFormData, string>>
 
 export function ProfilePage() {
   const { user, syncUser } = useAuth()
+  const { confirm, ConfirmDialog } = useConfirmDialog()
   const [profileForm, setProfileForm] = useState<UpdateProfileFormData>({
     nome: '',
     email: '',
@@ -38,10 +47,13 @@ export function ProfilePage() {
   const [passwordErrors, setPasswordErrors] = useState<PasswordErrors>({})
   const [profileError, setProfileError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [privacyError, setPrivacyError] = useState<string | null>(null)
+  const [privacySuccess, setPrivacySuccess] = useState<string | null>(null)
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [isPrivacyBusy, setIsPrivacyBusy] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -129,9 +141,90 @@ export function ProfilePage() {
     }
   }
 
+  const handleExportData = async () => {
+    setPrivacyError(null)
+    setPrivacySuccess(null)
+    setIsPrivacyBusy(true)
+    try {
+      const data = await exportMyPersonalData()
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `meus-dados-lgpd-${new Date().toISOString().slice(0, 10)}.json`
+      anchor.click()
+      URL.revokeObjectURL(url)
+      setPrivacySuccess('Arquivo com seus dados baixado com sucesso.')
+    } catch (error) {
+      setPrivacyError(
+        error instanceof ApiError
+          ? error.message
+          : 'Não foi possível exportar seus dados.',
+      )
+    } finally {
+      setIsPrivacyBusy(false)
+    }
+  }
+
+  const handleAcceptLgpd = async () => {
+    setPrivacyError(null)
+    setPrivacySuccess(null)
+    setIsPrivacyBusy(true)
+    try {
+      const updated = await acceptLgpdPolicy(LGPD_POLICY_VERSION)
+      syncUser(updated)
+      setPrivacySuccess('Aceite da Política de Privacidade registrado.')
+    } catch (error) {
+      setPrivacyError(
+        error instanceof ApiError
+          ? error.message
+          : 'Não foi possível registrar o aceite.',
+      )
+    } finally {
+      setIsPrivacyBusy(false)
+    }
+  }
+
+  const handleRequestDeletion = async () => {
+    const confirmed = await confirm({
+      title: 'Solicitar exclusão de dados',
+      message:
+        'A oficina receberá seu pedido. Quando não for possível apagar o histórico de OS, os dados pessoais poderão ser anonimizados.',
+      confirmLabel: 'Solicitar exclusão',
+      variant: 'danger',
+    })
+    if (!confirmed) return
+
+    setPrivacyError(null)
+    setPrivacySuccess(null)
+    setIsPrivacyBusy(true)
+    try {
+      const updated = await requestPersonalDataDeletion()
+      syncUser(updated)
+      setPrivacySuccess(
+        'Solicitação registrada. A oficina irá analisar e concluir o pedido.',
+      )
+    } catch (error) {
+      setPrivacyError(
+        error instanceof ApiError
+          ? error.message
+          : 'Não foi possível registrar a solicitação.',
+      )
+    } finally {
+      setIsPrivacyBusy(false)
+    }
+  }
+
   if (!user) {
     return null
   }
+
+  const needsLgpdAccept =
+    !user.lgpdAceiteEm || user.lgpdAceiteVersao !== LGPD_POLICY_VERSION
+  const deletionRequested = Boolean(user.lgpdExclusaoSolicitadaEm)
+  const anonymized = Boolean(user.lgpdAnonimizadoEm)
 
   return (
     <div className="page">
@@ -185,7 +278,7 @@ export function ProfilePage() {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isSavingProfile}
+                disabled={isSavingProfile || anonymized}
               >
                 {isSavingProfile ? 'Salvando...' : 'Salvar alterações'}
               </button>
@@ -244,14 +337,82 @@ export function ProfilePage() {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={isSavingPassword}
+                disabled={isSavingPassword || anonymized}
               >
                 {isSavingPassword ? 'Alterando...' : 'Alterar senha'}
               </button>
             </div>
           </form>
         </section>
+
+        <section className="profile-card profile-card--wide">
+          <h2>Privacidade (LGPD)</h2>
+          <p className="profile-card-description">
+            Consulte a política, exporte seus dados ou solicite exclusão/anonimização.
+          </p>
+
+          {privacySuccess && (
+            <p className="profile-success-banner">{privacySuccess}</p>
+          )}
+          {privacyError && <p className="page-error-banner">{privacyError}</p>}
+
+          <ul className="profile-privacy-meta">
+            <li>
+              Política:{' '}
+              <Link to={ROUTES.privacy} className="login-link">
+                ver texto completo (v{LGPD_POLICY_VERSION})
+              </Link>
+            </li>
+            <li>
+              Aceite:{' '}
+              {user.lgpdAceiteEm
+                ? `${formatDateTime(user.lgpdAceiteEm)} · v${user.lgpdAceiteVersao ?? '—'}`
+                : 'ainda não registrado'}
+            </li>
+            {deletionRequested && (
+              <li>
+                Exclusão solicitada em {formatDateTime(user.lgpdExclusaoSolicitadaEm!)}
+              </li>
+            )}
+            {anonymized && (
+              <li>Dados anonimizados em {formatDateTime(user.lgpdAnonimizadoEm!)}</li>
+            )}
+          </ul>
+
+          <div className="profile-form-actions profile-privacy-actions">
+            {needsLgpdAccept && !anonymized && (
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={isPrivacyBusy}
+                onClick={() => void handleAcceptLgpd()}
+              >
+                Aceitar política v{LGPD_POLICY_VERSION}
+              </button>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={isPrivacyBusy}
+              onClick={() => void handleExportData()}
+            >
+              {isPrivacyBusy ? 'Processando...' : 'Exportar meus dados'}
+            </button>
+            {!anonymized && (
+              <button
+                type="button"
+                className="btn btn-danger"
+                disabled={isPrivacyBusy || deletionRequested}
+                onClick={() => void handleRequestDeletion()}
+              >
+                {deletionRequested ? 'Exclusão já solicitada' : 'Solicitar exclusão'}
+              </button>
+            )}
+          </div>
+        </section>
       </div>
+
+      <ConfirmDialog />
     </div>
   )
 }

@@ -25,6 +25,8 @@ export interface Customer {
   estado?: string
   ibge?: string
   usuarioId?: number | null
+  lgpdExclusaoSolicitadaEm?: string | null
+  lgpdAnonimizadoEm?: string | null
   criadoEm: string
   atualizadoEm: string
 }
@@ -35,6 +37,10 @@ export interface User {
   nome: string
   perfil: UserProfile
   clienteId: number | null
+  lgpdAceiteEm?: string | null
+  lgpdAceiteVersao?: string | null
+  lgpdExclusaoSolicitadaEm?: string | null
+  lgpdAnonimizadoEm?: string | null
 }
 
 export interface SystemUser {
@@ -68,7 +74,7 @@ export interface ServiceOrderItem {
   descricao: string
   quantidade: number
   valorUnitario: number
-  tipo: 'PECA' | 'SERVICO'
+  tipo: 'PECA'
   valorTotal: number
 }
 
@@ -93,6 +99,7 @@ export interface ServiceOrder {
   custoPecas: number
   custoMaoDeObra: number
   descricaoMaoDeObra?: string
+  diagnosticoInicial?: string
   precoTotal: number
   status: ServiceOrderStatus
   itens: ServiceOrderItem[]
@@ -126,6 +133,8 @@ export function mapCustomer(response: CustomerResponse): Customer {
     estado: endereco?.estado ?? undefined,
     ibge: endereco?.ibge ?? undefined,
     usuarioId: response.usuarioId,
+    lgpdExclusaoSolicitadaEm: response.lgpdExclusaoSolicitadaEm,
+    lgpdAnonimizadoEm: response.lgpdAnonimizadoEm,
     criadoEm: response.createdAt,
     atualizadoEm: response.updatedAt,
   }
@@ -138,6 +147,10 @@ export function mapUser(response: UserResponse): User {
     nome: response.nome,
     perfil: response.perfil,
     clienteId: response.clienteId,
+    lgpdAceiteEm: response.lgpdAceiteEm,
+    lgpdAceiteVersao: response.lgpdAceiteVersao,
+    lgpdExclusaoSolicitadaEm: response.lgpdExclusaoSolicitadaEm,
+    lgpdAnonimizadoEm: response.lgpdAnonimizadoEm,
   }
 }
 
@@ -202,6 +215,7 @@ export function mapServiceOrder(response: ServiceOrderResponse): ServiceOrder {
     custoPecas: response.custoPecas,
     custoMaoDeObra: response.custoMaoDeObra,
     descricaoMaoDeObra: response.descricaoMaoDeObra ?? undefined,
+    diagnosticoInicial: response.diagnosticoInicial ?? undefined,
     precoTotal: response.precoTotal,
     status: response.status,
     itens: response.itens.map(mapServiceOrderItem),

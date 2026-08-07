@@ -5,7 +5,7 @@ import { ROUTES } from '../paths'
 import { canManageCustomers } from '../../utils/permissions'
 
 const CustomersPage = lazyPage(() =>
-  import('../../pages/CustomersPage').then((module) => ({
+  import('../../pages/customers/CustomersPage').then((module) => ({
     default: module.CustomersPage,
   })),
 )

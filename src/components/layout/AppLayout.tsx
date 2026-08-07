@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Car, ClipboardList, Home, LogOut, Shield, Users, type LucideIcon } from 'lucide-react'
+import { Car, ClipboardList, FileText, Home, LogOut, Shield, Users, type LucideIcon } from 'lucide-react'
 import { ROUTES } from '../../routes/paths'
 import { useAuth } from '../../contexts/AuthContext'
 import { canManageCustomers, canManageServiceOrders, canManageUsers, canManageVehicles, canViewMyServiceOrders } from '../../utils/permissions'
@@ -18,6 +18,12 @@ const navItems: Array<{
     to: ROUTES.myServiceOrders,
     label: 'Meus atendimentos',
     icon: ClipboardList,
+    show: canViewMyServiceOrders,
+  },
+  {
+    to: ROUTES.myReports,
+    label: 'Relatórios',
+    icon: FileText,
     show: canViewMyServiceOrders,
   },
   {

@@ -1,23 +1,25 @@
 import { useEffect, useState } from 'react'
+import { FileDown } from 'lucide-react'
 import { fetchMyServiceOrderStatusHistory } from '../../api/auth'
 import { fetchServiceOrderStatusHistory } from '../../api/serviceOrders'
 import { ApiError } from '../../api/errors'
-import type { ServiceOrderStatusHistoryResponse } from '../../api/types'
-import type { ServiceOrder } from '../../types'
+import type { ServiceOrderStatus, ServiceOrderStatusHistoryResponse } from '../../api/types'
+import type { ServiceOrder, User } from '../../types'
 import { displayPlaca } from '../../utils/masks'
+import { downloadServiceOrderBudgetPdf } from '../../utils/pdf/serviceOrderBudgetPdf'
 import {
   formatCurrency,
   formatKm,
   formatServiceOrderDateTime,
-  getServiceOrderItemTypeLabel,
 } from '../../utils/serviceOrder'
 import { Modal } from '../ui/Modal'
+import { ServiceOrderStatusActions } from './ServiceOrderStatusActions'
 import { ServiceOrderStatusBadge } from './ServiceOrderStatusBadge'
 import './ServiceOrderStatusBadge.css'
 import { ServiceOrderStatusHistory } from './ServiceOrderStatusHistory'
 import './ServiceOrderStatusHistory.css'
 import './ServiceOrderDetailModal.css'
-import '../../pages/CustomersPage.css'
+import '../../pages/customers/CustomersPage.css'
 
 interface ServiceOrderDetailModalProps {
   isOpen: boolean
@@ -31,6 +33,9 @@ interface ServiceOrderDetailModalProps {
   onApprove?: () => void
   onReject?: () => void
   statusHistorySource?: 'client' | 'staff' | null
+  staffUser?: User | null
+  isChangingStatus?: boolean
+  onChangeStatus?: (status: ServiceOrderStatus, confirmMessage?: string) => void
 }
 
 export function ServiceOrderDetailModal({
@@ -45,8 +50,14 @@ export function ServiceOrderDetailModal({
   onApprove,
   onReject,
   statusHistorySource = null,
+  staffUser = null,
+  isChangingStatus = false,
+  onChangeStatus,
 }: ServiceOrderDetailModalProps) {
   const showBudgetActions = canDecideBudget && serviceOrder?.status === 'ORCAMENTO'
+  const canDownloadBudgetPdf = Boolean(serviceOrder) && !isLoading && !error
+  const showStaffStatusActions =
+    statusHistorySource === 'staff' && Boolean(serviceOrder) && Boolean(onChangeStatus)
   const [statusHistory, setStatusHistory] = useState<ServiceOrderStatusHistoryResponse[]>([])
   const [isLoadingStatusHistory, setIsLoadingStatusHistory] = useState(false)
   const [statusHistoryError, setStatusHistoryError] = useState<string | null>(null)
@@ -101,9 +112,20 @@ export function ServiceOrderDetailModal({
           : 'Consulte os serviços realizados na oficina'
       }
       size="xl"
-      preventClose={isDeciding}
+      preventClose={isDeciding || isChangingStatus}
       footer={
         <div className="service-order-detail-footer">
+          {canDownloadBudgetPdf && serviceOrder && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => downloadServiceOrderBudgetPdf(serviceOrder)}
+              disabled={isDeciding || isChangingStatus}
+            >
+              <FileDown aria-hidden="true" />
+              Baixar / imprimir orçamento
+            </button>
+          )}
           {showBudgetActions && (
             <>
               <button
@@ -128,7 +150,7 @@ export function ServiceOrderDetailModal({
             type="button"
             className="btn btn-secondary"
             onClick={onClose}
-            disabled={isDeciding}
+            disabled={isDeciding || isChangingStatus}
           >
             Fechar
           </button>
@@ -145,9 +167,24 @@ export function ServiceOrderDetailModal({
             <div className="service-order-budget-banner">
               <strong>Orçamento aguardando sua aprovação</strong>
               <p>
-                Revise os itens e o valor total. Ao aprovar, a oficina poderá iniciar o
-                atendimento.
+                Revise os itens e o valor total. Você pode baixar o PDF para assinar e
+                entregar na oficina, ou aprovar/rejeitar digitalmente abaixo.
               </p>
+            </div>
+          )}
+
+          {showStaffStatusActions && (
+            <div className="service-order-staff-actions">
+              <strong>Avançar atendimento</strong>
+              <ServiceOrderStatusActions
+                status={serviceOrder.status}
+                user={staffUser}
+                size="md"
+                disabled={isChangingStatus}
+                onChangeStatus={(status, confirmMessage) =>
+                  onChangeStatus?.(status, confirmMessage)
+                }
+              />
             </div>
           )}
 
@@ -171,7 +208,7 @@ export function ServiceOrderDetailModal({
                 <ServiceOrderStatusBadge status={serviceOrder.status} />
               </p>
               <p>
-                <strong>Técnico:</strong> {serviceOrder.tecnicoNome}
+                <strong>Responsável:</strong> {serviceOrder.tecnicoNome}
               </p>
               <p>
                 <strong>KM entrada:</strong> {formatKm(serviceOrder.kmEntrada)}
@@ -181,6 +218,13 @@ export function ServiceOrderDetailModal({
               </p>
             </article>
           </section>
+
+          {serviceOrder.diagnosticoInicial && (
+            <section className="service-order-detail-diagnosis">
+              <h3>Diagnóstico</h3>
+              <p>{serviceOrder.diagnosticoInicial}</p>
+            </section>
+          )}
 
           <section className="service-order-detail-items">
             <h3>Itens da ordem</h3>
@@ -192,7 +236,6 @@ export function ServiceOrderDetailModal({
                   <thead>
                     <tr>
                       <th>Descrição</th>
-                      <th>Tipo</th>
                       <th>Qtd.</th>
                       <th>Valor unit.</th>
                       <th>Total</th>
@@ -200,9 +243,8 @@ export function ServiceOrderDetailModal({
                   </thead>
                   <tbody>
                     {serviceOrder.itens.map((item) => (
-                      <tr key={item.id ?? `${item.descricao}-${item.tipo}`}>
+                      <tr key={item.id ?? item.descricao}>
                         <td>{item.descricao}</td>
-                        <td>{getServiceOrderItemTypeLabel(item.tipo)}</td>
                         <td>{item.quantidade.toLocaleString('pt-BR')}</td>
                         <td>{formatCurrency(item.valorUnitario)}</td>
                         <td>
@@ -218,6 +260,13 @@ export function ServiceOrderDetailModal({
 
           <section className="service-order-detail-totals">
             <div>
+              <span>Serviços terceirizados</span>
+              <strong>{formatCurrency(serviceOrder.custoServicosTerceirizados)}</strong>
+              {serviceOrder.descricaoServicosTerceirizados && (
+                <small>{serviceOrder.descricaoServicosTerceirizados}</small>
+              )}
+            </div>
+            <div>
               <span>Peças</span>
               <strong>{formatCurrency(serviceOrder.custoPecas)}</strong>
             </div>
@@ -226,13 +275,6 @@ export function ServiceOrderDetailModal({
               <strong>{formatCurrency(serviceOrder.custoMaoDeObra)}</strong>
               {serviceOrder.descricaoMaoDeObra && (
                 <small>{serviceOrder.descricaoMaoDeObra}</small>
-              )}
-            </div>
-            <div>
-              <span>Serviços terceirizados</span>
-              <strong>{formatCurrency(serviceOrder.custoServicosTerceirizados)}</strong>
-              {serviceOrder.descricaoServicosTerceirizados && (
-                <small>{serviceOrder.descricaoServicosTerceirizados}</small>
               )}
             </div>
             <div className="service-order-detail-total">

@@ -1,23 +1,23 @@
 import { useMemo, useState } from 'react'
 import { ClipboardList, Eye } from 'lucide-react'
-import { fetchMyServiceOrder } from '../api/auth'
-import { ApiError } from '../api/errors'
-import { ServiceOrderDetailModal } from '../components/serviceOrders/ServiceOrderDetailModal'
-import { ServiceOrderStatusBadge } from '../components/serviceOrders/ServiceOrderStatusBadge'
-import '../components/serviceOrders/ServiceOrderStatusBadge.css'
-import { Pagination } from '../components/ui/Pagination'
-import '../components/ui/Pagination.css'
-import { DEFAULT_PAGE_SIZE } from '../constants/pagination'
+import { fetchMyServiceOrder } from '../../api/auth'
+import { ApiError } from '../../api/errors'
+import { ServiceOrderDetailModal } from '../../components/serviceOrders/ServiceOrderDetailModal'
+import { ServiceOrderStatusBadge } from '../../components/serviceOrders/ServiceOrderStatusBadge'
+import '../../components/serviceOrders/ServiceOrderStatusBadge.css'
+import { Pagination } from '../../components/ui/Pagination'
+import '../../components/ui/Pagination.css'
+import { DEFAULT_PAGE_SIZE } from '../../constants/pagination'
 import {
   useMyServiceOrderMutations,
   useMyServiceOrdersList,
-} from '../hooks/useMyServiceOrders'
-import { useConfirmDialog } from '../hooks/useConfirmDialog'
-import { usePaginationState } from '../hooks/usePaginationState'
-import { mapServiceOrder } from '../types'
-import type { ServiceOrder } from '../types'
-import { displayPlaca } from '../utils/masks'
-import { formatCurrency, formatKm, formatServiceOrderDateTime } from '../utils/serviceOrder'
+} from '../../hooks/useMyServiceOrders'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
+import { usePaginationState } from '../../hooks/usePaginationState'
+import { mapServiceOrder } from '../../types'
+import type { ServiceOrder } from '../../types'
+import { displayPlaca } from '../../utils/masks'
+import { formatCurrency, formatKm, formatServiceOrderDateTime } from '../../utils/serviceOrder'
 import './ClientServiceOrdersPage.css'
 
 interface ServiceOrderCardProps {
@@ -56,7 +56,7 @@ function ServiceOrderCard({
           <span>Revise os valores e aprove ou rejeite o orçamento</span>
         ) : (
           <span>
-            Técnico: {serviceOrder.tecnicoNome} · KM saída: {formatKm(serviceOrder.kmSaida)}
+            Responsável: {serviceOrder.tecnicoNome} · KM saída: {formatKm(serviceOrder.kmSaida)}
           </span>
         )}
       </div>

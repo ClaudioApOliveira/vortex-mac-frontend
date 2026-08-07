@@ -1,23 +1,26 @@
 import { useMemo, useState } from 'react'
 import { Eye, Users } from 'lucide-react'
-import { ApiError } from '../api/errors'
-import { CustomerDetailModal } from '../components/customers/CustomerDetailModal'
-import { CustomerFormModal } from '../components/customers/CustomerFormModal'
-import { Pagination } from '../components/ui/Pagination'
-import '../components/ui/Pagination.css'
-import { DEFAULT_PAGE_SIZE } from '../constants/pagination'
-import { useCustomers } from '../hooks/useCustomers'
-import { useVehicles } from '../hooks/useVehicles'
-import { useConfirmDialog } from '../hooks/useConfirmDialog'
-import { usePaginationState } from '../hooks/usePaginationState'
-import type { CustomerFormData } from '../schemas/customer.schema'
-import type { VehicleFormData } from '../schemas/vehicle.schema'
-import type { Customer } from '../types'
-import { formatCpfCnpj } from '../utils/masks'
-import { getSafeApiErrorMessage } from '../utils/apiMessages'
+import { ApiError } from '../../api/errors'
+import { CustomerDetailModal } from '../../components/customers/CustomerDetailModal'
+import { CustomerFormModal } from '../../components/customers/CustomerFormModal'
+import { Pagination } from '../../components/ui/Pagination'
+import '../../components/ui/Pagination.css'
+import { DEFAULT_PAGE_SIZE } from '../../constants/pagination'
+import { useAuth } from '../../contexts/AuthContext'
+import { useCustomers } from '../../hooks/useCustomers'
+import { useVehicles } from '../../hooks/useVehicles'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
+import { usePaginationState } from '../../hooks/usePaginationState'
+import type { CustomerFormData } from '../../schemas/customer.schema'
+import type { VehicleFormData } from '../../schemas/vehicle.schema'
+import type { Customer } from '../../types'
+import { formatCpfCnpj } from '../../utils/masks'
+import { getSafeApiErrorMessage } from '../../utils/apiMessages'
+import { canAnonymizeCustomers } from '../../utils/permissions'
 import './CustomersPage.css'
 
 export function CustomersPage() {
+  const { user } = useAuth()
   const {
     customers,
     isLoading,
@@ -25,6 +28,7 @@ export function CustomersPage() {
     addCustomer,
     editCustomer,
     removeCustomer,
+    anonymizeCustomerData,
   } = useCustomers()
   const { addVehicle } = useVehicles()
   const { confirm, ConfirmDialog } = useConfirmDialog()
@@ -35,6 +39,16 @@ export function CustomersPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitWarning, setSubmitWarning] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const canAnonymize = canAnonymizeCustomers(user)
+
+  const pendingDeletion = useMemo(
+    () =>
+      customers.filter(
+        (customer) =>
+          customer.lgpdExclusaoSolicitadaEm && !customer.lgpdAnonimizadoEm,
+      ),
+    [customers],
+  )
 
   const totalElements = customers.length
   const totalPages = Math.max(1, Math.ceil(totalElements / pageSize))
@@ -129,6 +143,27 @@ export function CustomersPage() {
     }
   }
 
+  const handleAnonymize = async (customer: Customer) => {
+    const confirmed = await confirm({
+      title: 'Anonimizar dados (LGPD)',
+      message: `Anonimizar os dados pessoais de ${customer.nome}? CPF, telefone, endereço e e-mail serão removidos. O histórico de OS é mantido sem identificação.`,
+      confirmLabel: 'Anonimizar',
+      variant: 'danger',
+    })
+    if (!confirmed) return
+
+    setSubmitError(null)
+    setSubmitWarning(null)
+    try {
+      await anonymizeCustomerData(customer.id)
+      setSubmitWarning('Dados pessoais anonimizados com sucesso.')
+    } catch (err) {
+      setSubmitError(
+        getSafeApiErrorMessage(err, 'Não foi possível anonimizar o cliente.'),
+      )
+    }
+  }
+
   return (
     <div className="page">
       <header className="page-header">
@@ -146,6 +181,12 @@ export function CustomersPage() {
       {error && <p className="page-error-banner">{error}</p>}
       {submitError && <p className="page-error-banner">{submitError}</p>}
       {submitWarning && <p className="page-warning-banner">{submitWarning}</p>}
+      {pendingDeletion.length > 0 && (
+        <p className="page-warning-banner">
+          {pendingDeletion.length} solicitação(ões) de exclusão LGPD pendente(s). Use
+          “Anonimizar” na linha do cliente.
+        </p>
+      )}
 
       {isLoading ? (
         <div className="empty-state">
@@ -179,6 +220,14 @@ export function CustomersPage() {
                   <tr key={customer.id}>
                     <td>
                       <strong>{customer.nome}</strong>
+                      {customer.lgpdExclusaoSolicitadaEm && !customer.lgpdAnonimizadoEm && (
+                        <div className="customer-lgpd-flag">Exclusão solicitada</div>
+                      )}
+                      {customer.lgpdAnonimizadoEm && (
+                        <div className="customer-lgpd-flag customer-lgpd-flag--muted">
+                          Anonimizado
+                        </div>
+                      )}
                     </td>
                     <td>{customer.email ?? '—'}</td>
                     <td>{customer.telefone ?? '—'}</td>
@@ -200,20 +249,33 @@ export function CustomersPage() {
                           <Eye aria-hidden="true" />
                           Ver detalhes
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => openEditModal(customer)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDelete(customer)}
-                        >
-                          Excluir
-                        </button>
+                        {!customer.lgpdAnonimizadoEm && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => openEditModal(customer)}
+                          >
+                            Editar
+                          </button>
+                        )}
+                        {canAnonymize && !customer.lgpdAnonimizadoEm && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => void handleAnonymize(customer)}
+                          >
+                            Anonimizar
+                          </button>
+                        )}
+                        {!customer.lgpdAnonimizadoEm && (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => void handleDelete(customer)}
+                          >
+                            Excluir
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

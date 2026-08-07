@@ -1,4 +1,4 @@
-@import './CustomersPage.css';
+@import '../customers/CustomersPage.css';
 
 .client-service-orders-page .page-header {
   margin-bottom: 0;

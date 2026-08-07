@@ -132,3 +132,14 @@
     width: 100%;
   }
 }
+
+.customer-lgpd-flag {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #fbbf24;
+}
+
+.customer-lgpd-flag--muted {
+  color: var(--text-muted);
+}
+

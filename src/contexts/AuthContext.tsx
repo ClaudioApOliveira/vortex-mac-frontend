@@ -40,6 +40,8 @@ interface AuthContextValue {
     email: string,
     senha: string,
     confirmarSenha: string,
+    lgpdAceite: boolean,
+    lgpdAceiteVersao: string,
   ) => Promise<void>
   syncUser: (response: UserResponse) => void
   refreshUser: () => Promise<void>
@@ -118,8 +120,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const completeFirstAccess = useCallback(
-    async (email: string, senha: string, confirmarSenha: string) => {
-      await primeiroAcessoRequest(email, senha, confirmarSenha)
+    async (
+      email: string,
+      senha: string,
+      confirmarSenha: string,
+      lgpdAceite: boolean,
+      lgpdAceiteVersao: string,
+    ) => {
+      await primeiroAcessoRequest(
+        email,
+        senha,
+        confirmarSenha,
+        lgpdAceite,
+        lgpdAceiteVersao,
+      )
       const currentUser = await fetchCurrentUser()
       setUser(mapUser(currentUser))
       resetSessionExpiredGuard()

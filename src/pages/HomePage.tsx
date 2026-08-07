@@ -1,15 +1,26 @@
+import { useMemo } from 'react'
 import { Car, ClipboardList, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { ServiceOrderStatusBadge } from '../components/serviceOrders/ServiceOrderStatusBadge'
+import '../components/serviceOrders/ServiceOrderStatusBadge.css'
 import { useAuth } from '../contexts/AuthContext'
 import { useCustomers } from '../hooks/useCustomers'
 import { useVehicles } from '../hooks/useVehicles'
 import { useMyServiceOrdersDashboard } from '../hooks/useMyServiceOrders'
-import { useServiceOrdersSummary } from '../hooks/useServiceOrders'
+import {
+  useServiceOrdersList,
+  useServiceOrdersSummary,
+  mapServiceOrdersPageItems,
+} from '../hooks/useServiceOrders'
 import { ROUTES } from '../routes/paths'
 import { formatCustomerAddress } from '../utils/address'
 import { displayAnoFabModelo, displayPlaca } from '../utils/masks'
-import { canViewMyServiceOrders } from '../utils/permissions'
-import { formatCurrency, formatServiceOrderDateTime } from '../utils/serviceOrder'
+import { canManageServiceOrders, canViewMyServiceOrders } from '../utils/permissions'
+import {
+  formatCurrency,
+  formatServiceOrderDateTime,
+} from '../utils/serviceOrder'
+import { isActiveWorkshopStatus } from '../utils/serviceOrderTransitions'
 import './HomePage.css'
 
 export function HomePage() {
@@ -22,12 +33,38 @@ export function HomePage() {
     isLoading: isLoadingServiceOrders,
   } = useServiceOrdersSummary(5)
   const isClientView = canViewMyServiceOrders(user)
+  const isStaffView = canManageServiceOrders(user)
+  const myQueueFilters = useMemo(
+    () => ({
+      tecnicoId: user?.id ? String(user.id) : '',
+    }),
+    [user?.id],
+  )
+  const {
+    items: myQueueItems,
+    isLoading: isLoadingMyQueue,
+  } = useServiceOrdersList(0, 10, myQueueFilters)
+  const myActiveOrders = useMemo(
+    () =>
+      mapServiceOrdersPageItems(myQueueItems).filter((order) =>
+        isActiveWorkshopStatus(order.status),
+      ),
+    [myQueueItems],
+  )
   const {
     serviceOrders: myServiceOrders,
     pendingBudgets,
     totalElements: totalMyServiceOrders,
     isLoading: isLoadingMyServiceOrders,
   } = useMyServiceOrdersDashboard()
+
+  const recentClientOrders = useMemo(
+    () =>
+      myServiceOrders
+        .filter((order) => order.status !== 'ORCAMENTO')
+        .slice(0, 5),
+    [myServiceOrders],
+  )
 
   if (isClientView) {
     return (
@@ -100,12 +137,9 @@ export function HomePage() {
                   Ver histórico completo
                 </Link>
               </div>
-              {myServiceOrders.some((order) => order.status !== 'ORCAMENTO') ? (
+              {recentClientOrders.length > 0 ? (
                 <div className="recent-list">
-                  {myServiceOrders
-                    .filter((order) => order.status !== 'ORCAMENTO')
-                    .slice(0, 5)
-                    .map((serviceOrder) => (
+                  {recentClientOrders.map((serviceOrder) => (
                       <div key={serviceOrder.id} className="recent-item">
                         <div className="recent-item-info">
                           <strong>
@@ -178,6 +212,42 @@ export function HomePage() {
       </div>
 
       <div className="home-sections">
+        {isStaffView && (
+          <section className="home-section">
+            <div className="home-section-header">
+              <h2>Minhas OS em andamento</h2>
+              <Link
+                to={ROUTES.serviceOrders}
+                className="btn btn-secondary btn-sm"
+              >
+                Ver todas
+              </Link>
+            </div>
+            {isLoadingMyQueue ? (
+              <p className="home-section-empty">Carregando sua fila...</p>
+            ) : myActiveOrders.length === 0 ? (
+              <p className="home-section-empty">
+                Nenhuma OS sua em andamento no momento.
+              </p>
+            ) : (
+              <div className="recent-list">
+                {myActiveOrders.slice(0, 5).map((serviceOrder) => (
+                  <div key={serviceOrder.id} className="recent-item">
+                    <div className="recent-item-info">
+                      <strong>{serviceOrder.clienteNome}</strong>
+                      <small>
+                        {displayPlaca(serviceOrder.veiculoPlaca)} ·{' '}
+                        {formatServiceOrderDateTime(serviceOrder.data, serviceOrder.hora)}
+                      </small>
+                    </div>
+                    <ServiceOrderStatusBadge status={serviceOrder.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
         {!isLoadingCustomers && customers.length > 0 && (
           <section className="home-section">
             <h2>Clientes recentes</h2>

@@ -1,17 +1,17 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Shield } from 'lucide-react'
 import {
   UserFormModal,
   UserProfileBadge,
-} from '../components/users/UserFormModal'
-import { useAuth } from '../contexts/AuthContext'
-import { useCustomers } from '../hooks/useCustomers'
-import { useConfirmDialog } from '../hooks/useConfirmDialog'
-import { useUsers } from '../hooks/useUsers'
-import type { UserFormData } from '../schemas/user.schema'
-import type { SystemUser } from '../types'
-import { getSafeApiErrorMessage } from '../utils/apiMessages'
-import { canManageAdminUsers } from '../utils/permissions'
+} from '../../components/users/UserFormModal'
+import { useAuth } from '../../contexts/AuthContext'
+import { useCustomers } from '../../hooks/useCustomers'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
+import { useUsers } from '../../hooks/useUsers'
+import type { UserFormData } from '../../schemas/user.schema'
+import type { SystemUser } from '../../types'
+import { getSafeApiErrorMessage } from '../../utils/apiMessages'
+import { canManageAdminUsers } from '../../utils/permissions'
 import './UsersPage.css'
 
 export function UsersPage() {
@@ -23,6 +23,19 @@ export function UsersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const visibleUsers = useMemo(() => {
+    if (canManageAdminUsers(loggedUser)) return users
+    return users.filter((user) => user.perfil !== 'ADMIN')
+  }, [users, loggedUser])
+
+  const customerNameById = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const customer of customers) {
+      map.set(customer.id, customer.nome)
+    }
+    return map
+  }, [customers])
 
   const openCreateModal = () => {
     setSelectedUser(null)
@@ -82,7 +95,7 @@ export function UsersPage() {
 
   const getCustomerName = (clienteId: number | null) => {
     if (!clienteId) return '—'
-    return customers.find((customer) => customer.id === clienteId)?.nome ?? '—'
+    return customerNameById.get(clienteId) ?? '—'
   }
 
   const canEditUser = (user: SystemUser) =>
@@ -109,7 +122,7 @@ export function UsersPage() {
         <div className="empty-state">
           <p>Carregando usuários...</p>
         </div>
-      ) : users.length === 0 ? (
+      ) : visibleUsers.length === 0 ? (
         <div className="empty-state">
           <Shield className="empty-icon" aria-hidden="true" />
           <h2>Nenhum usuário cadastrado</h2>
@@ -132,7 +145,7 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {visibleUsers.map((user) => (
                 <tr key={user.id}>
                   <td>
                     <strong>{user.nome}</strong>

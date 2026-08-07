@@ -51,7 +51,7 @@ export const serviceOrderItemSchema = z.object({
     .max(255, 'Descrição deve ter no máximo 255 caracteres'),
   quantidade: quantityField,
   valorUnitario: moneyField('Valor unitário'),
-  tipo: z.enum(['PECA', 'SERVICO'], { message: 'Tipo é obrigatório' }),
+  tipo: z.enum(['PECA'], { message: 'Tipo é obrigatório' }),
 })
 
 const optionalDescriptionField = z
@@ -60,15 +60,22 @@ const optionalDescriptionField = z
   .optional()
   .or(z.literal(''))
 
+const optionalDiagnosticoField = z
+  .string()
+  .max(4000, 'Diagnóstico deve ter no máximo 4000 caracteres')
+  .optional()
+  .or(z.literal(''))
+
 export const serviceOrderFormSchema = z
   .object({
     clienteId: z.string().min(1, 'Proprietário é obrigatório'),
     veiculoId: z.string().min(1, 'Veículo é obrigatório'),
-    tecnicoId: z.string().min(1, 'Técnico é obrigatório'),
+    tecnicoId: z.string().min(1, 'Responsável é obrigatório'),
     data: z.string().min(1, 'Data é obrigatória'),
     hora: z.string().min(1, 'Hora é obrigatória'),
     kmEntrada: optionalKmField,
     kmSaida: optionalKmField,
+    diagnosticoInicial: optionalDiagnosticoField,
     custoServicosTerceirizados: moneyField('Custo de serviços terceirizados'),
     descricaoServicosTerceirizados: optionalDescriptionField,
     custoMaoDeObra: moneyField('Custo de mão de obra'),
@@ -107,6 +114,7 @@ export const emptyServiceOrderForm: ServiceOrderFormData = {
   hora: new Date().toTimeString().slice(0, 5),
   kmEntrada: '',
   kmSaida: '',
+  diagnosticoInicial: '',
   custoServicosTerceirizados: '0,00',
   descricaoServicosTerceirizados: '',
   custoMaoDeObra: '0,00',
@@ -123,7 +131,6 @@ export function calculateServiceOrderTotals(
   let custoPecas = 0
 
   for (const item of itens) {
-    if (item.tipo !== 'PECA') continue
     const qty = Number(item.quantidade.replace(',', '.')) || 0
     const unit = parseMoneyInput(item.valorUnitario)
     custoPecas += qty * unit
@@ -133,7 +140,12 @@ export function calculateServiceOrderTotals(
   const custoC = parseMoneyInput(custoMaoDeObra)
   const precoTotal = custoA + custoPecas + custoC
 
-  return { custoPecas, custoMaoDeObra: custoC, precoTotal }
+  return {
+    custoServicosTerceirizados: custoA,
+    custoPecas,
+    custoMaoDeObra: custoC,
+    precoTotal,
+  }
 }
 
 export function toServiceOrderPayload(data: ServiceOrderFormData) {
@@ -151,6 +163,7 @@ export function toServiceOrderPayload(data: ServiceOrderFormData) {
     descricaoServicosTerceirizados: data.descricaoServicosTerceirizados?.trim() || undefined,
     custoMaoDeObra: parseMoneyInput(data.custoMaoDeObra),
     descricaoMaoDeObra: data.descricaoMaoDeObra?.trim() || undefined,
+    diagnosticoInicial: data.diagnosticoInicial?.trim() || undefined,
     status: data.status,
     itens: data.itens.map((item) => ({
       descricao: item.descricao.trim(),

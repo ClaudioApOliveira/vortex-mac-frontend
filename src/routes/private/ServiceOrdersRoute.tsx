@@ -5,7 +5,7 @@ import { ROUTES } from '../paths'
 import { canManageServiceOrders } from '../../utils/permissions'
 
 const ServiceOrdersPage = lazyPage(() =>
-  import('../../pages/ServiceOrdersPage').then((module) => ({
+  import('../../pages/serviceOrders/ServiceOrdersPage').then((module) => ({
     default: module.ServiceOrdersPage,
   })),
 )

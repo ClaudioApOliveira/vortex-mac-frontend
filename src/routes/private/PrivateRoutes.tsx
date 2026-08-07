@@ -3,6 +3,7 @@ import { AppLayout } from '../../components/layout/AppLayout'
 import { ProtectedRoute } from '../guards/ProtectedRoute'
 import { customersRoute } from './CustomersRoute'
 import { homeRoute } from './HomeRoute'
+import { myReportsRoute } from './MyReportsRoute'
 import { myServiceOrdersRoute } from './MyServiceOrdersRoute'
 import { notFoundRoute } from './NotFoundRoute'
 import { profileRoute } from './ProfileRoute'
@@ -21,6 +22,7 @@ export const privateRoutes = (
     {homeRoute}
     {profileRoute}
     {myServiceOrdersRoute}
+    {myReportsRoute}
     {customersRoute}
     {vehiclesRoute}
     {serviceOrdersRoute}

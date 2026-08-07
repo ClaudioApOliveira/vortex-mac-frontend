@@ -1,23 +1,24 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ApiError } from '../api/errors'
-import { verificarPrimeiroAcesso } from '../api/auth'
-import { loginSchema } from '../schemas/auth.schema'
+import { Link, useNavigate } from 'react-router-dom'
+import { ApiError } from '../../api/errors'
+import { verificarPrimeiroAcesso } from '../../api/auth'
+import { LGPD_POLICY_VERSION } from '../../constants/lgpd'
+import { loginSchema } from '../../schemas/auth.schema'
 import {
   firstAccessEmailSchema,
   firstAccessPasswordSchema,
-} from '../schemas/firstAccess.schema'
-import { useAuth } from '../contexts/AuthContext'
-import { ROUTES } from '../routes/paths'
+} from '../../schemas/firstAccess.schema'
+import { useAuth } from '../../contexts/AuthContext'
+import { ROUTES } from '../../routes/paths'
 import {
   FIRST_ACCESS_INELIGIBLE_MESSAGE,
   getFirstAccessErrorMessage,
   getLoginErrorMessage,
-} from '../utils/apiMessages'
-import { mapZodErrors } from '../utils/mapZodErrors'
-import { FormField } from '../components/ui/FormField'
-import { PasswordField } from '../components/ui/PasswordField'
-import { Logo } from '../components/ui/Logo'
+} from '../../utils/apiMessages'
+import { mapZodErrors } from '../../utils/mapZodErrors'
+import { FormField } from '../../components/ui/FormField'
+import { PasswordField } from '../../components/ui/PasswordField'
+import { Logo } from '../../components/ui/Logo'
 import './LoginPage.css'
 
 type LoginMode = 'login' | 'first-access'
@@ -33,6 +34,7 @@ export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [lgpdAceite, setLgpdAceite] = useState(false)
 
   const [firstAccessName, setFirstAccessName] = useState('')
 
@@ -44,6 +46,7 @@ export function LoginPage() {
     setEmail('')
     setPassword('')
     setConfirmPassword('')
+    setLgpdAceite(false)
     setFirstAccessName('')
     setErrors({})
     setSubmitError(null)
@@ -119,6 +122,7 @@ export function LoginPage() {
     const result = firstAccessPasswordSchema.safeParse({
       senha: password,
       confirmarSenha: confirmPassword,
+      lgpdAceite: lgpdAceite ? true : false,
     })
 
     if (!result.success) {
@@ -128,7 +132,13 @@ export function LoginPage() {
 
     setIsSubmitting(true)
     try {
-      await completeFirstAccess(email, result.data.senha, result.data.confirmarSenha)
+      await completeFirstAccess(
+        email,
+        result.data.senha,
+        result.data.confirmarSenha,
+        true,
+        LGPD_POLICY_VERSION,
+      )
       navigate(ROUTES.home)
     } catch (error) {
       setSubmitError(getFirstAccessErrorMessage(error))
@@ -196,6 +206,11 @@ export function LoginPage() {
                 >
                   Definir senha
                 </button>
+              </p>
+              <p className="login-switch">
+                <Link to={ROUTES.privacy} className="login-link">
+                  Política de Privacidade
+                </Link>
               </p>
             </form>
           ) : firstAccessStep === 'email' ? (
@@ -272,6 +287,26 @@ export function LoginPage() {
                 placeholder="Repita a senha"
                 autoComplete="new-password"
               />
+              <label className="login-consent">
+                <input
+                  type="checkbox"
+                  checked={lgpdAceite}
+                  onChange={(e) => {
+                    setLgpdAceite(e.target.checked)
+                    setErrors((prev) => ({ ...prev, lgpdAceite: undefined }))
+                  }}
+                />
+                <span>
+                  Li e aceito a{' '}
+                  <Link to={ROUTES.privacy} className="login-link" target="_blank">
+                    Política de Privacidade
+                  </Link>{' '}
+                  (v{LGPD_POLICY_VERSION}).
+                </span>
+              </label>
+              {errors.lgpdAceite && (
+                <span className="field-error">{errors.lgpdAceite}</span>
+              )}
               <button
                 type="submit"
                 className="btn btn-primary btn-full"
@@ -287,6 +322,7 @@ export function LoginPage() {
                     setFirstAccessStep('email')
                     setPassword('')
                     setConfirmPassword('')
+                    setLgpdAceite(false)
                     setFirstAccessName('')
                     setErrors({})
                     setSubmitError(null)

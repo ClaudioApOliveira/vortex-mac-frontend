@@ -5,6 +5,7 @@ import { setTokensFromResponse } from './tokenStorage'
 import type {
   ChangePasswordRequest,
   PageResponse,
+  PersonalDataExportResponse,
   ServiceOrderResponse,
   ServiceOrderStatusHistoryResponse,
   TokenResponse,
@@ -72,12 +73,20 @@ export async function primeiroAcessoRequest(
   email: string,
   senha: string,
   confirmarSenha: string,
+  lgpdAceite: boolean,
+  lgpdAceiteVersao: string,
 ) {
   const response = await fetch(`${API_BASE_URL}/api/auth/primeiro-acesso`, {
     method: 'POST',
     credentials: FETCH_CREDENTIALS,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, senha, confirmarSenha }),
+    body: JSON.stringify({
+      email,
+      senha,
+      confirmarSenha,
+      lgpdAceite,
+      lgpdAceiteVersao,
+    }),
   })
 
   if (!response.ok) {
@@ -159,6 +168,23 @@ export async function changeCurrentUserPassword(data: ChangePasswordRequest) {
 
   setTokensFromResponse(tokens)
   return tokens
+}
+
+export async function exportMyPersonalData() {
+  return apiRequest<PersonalDataExportResponse>('/api/auth/me/dados-pessoais')
+}
+
+export async function acceptLgpdPolicy(lgpdAceiteVersao: string) {
+  return apiRequest<UserResponse>('/api/auth/me/lgpd-aceite', {
+    method: 'POST',
+    body: { lgpdAceite: true, lgpdAceiteVersao },
+  })
+}
+
+export async function requestPersonalDataDeletion() {
+  return apiRequest<UserResponse>('/api/auth/me/solicitar-exclusao', {
+    method: 'POST',
+  })
 }
 
 export async function logoutRequest() {

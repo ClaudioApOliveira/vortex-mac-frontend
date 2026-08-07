@@ -1,5 +1,6 @@
 import type { ServiceOrderItemFormData } from '../../schemas/serviceOrder.schema'
 import { formatMoneyInput } from '../../utils/masks'
+import { RequiredMark } from '../ui/FormField'
 import './ServiceOrderItemsEditor.css'
 
 type ItemErrors = Partial<Record<keyof ServiceOrderItemFormData, string>>
@@ -22,7 +23,7 @@ export function ServiceOrderItemsEditor({
   return (
     <div className="os-items">
       <div className="os-items-header">
-        <h3>Peças e serviços</h3>
+        <h3>Peças</h3>
         <button type="button" className="btn btn-secondary btn-sm" onClick={onAdd}>
           + Adicionar item
         </button>
@@ -32,10 +33,18 @@ export function ServiceOrderItemsEditor({
         <table className="os-items-table">
           <thead>
             <tr>
-              <th>Descrição</th>
-              <th>Tipo</th>
-              <th>Quant.</th>
-              <th>R$ unit.</th>
+              <th>
+                Descrição
+                <RequiredMark />
+              </th>
+              <th>
+                Quant.
+                <RequiredMark />
+              </th>
+              <th>
+                R$ unit.
+                <RequiredMark />
+              </th>
               <th />
             </tr>
           </thead>
@@ -47,7 +56,9 @@ export function ServiceOrderItemsEditor({
                     type="text"
                     value={item.descricao}
                     onChange={(e) => onChange(index, 'descricao', e.target.value)}
-                    placeholder="Filtro de óleo, troca de óleo..."
+                    placeholder="Filtro de óleo, pastilha de freio..."
+                    required
+                    aria-required
                     className={errors[index]?.descricao ? 'input-error' : undefined}
                   />
                   {errors[index]?.descricao && (
@@ -55,21 +66,13 @@ export function ServiceOrderItemsEditor({
                   )}
                 </td>
                 <td>
-                  <select
-                    value={item.tipo}
-                    onChange={(e) => onChange(index, 'tipo', e.target.value)}
-                    className={errors[index]?.tipo ? 'input-error' : undefined}
-                  >
-                    <option value="PECA">Peça</option>
-                    <option value="SERVICO">Serviço</option>
-                  </select>
-                </td>
-                <td>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={item.quantidade}
                     onChange={(e) => onChange(index, 'quantidade', e.target.value)}
+                    required
+                    aria-required
                     className={errors[index]?.quantidade ? 'input-error' : undefined}
                   />
                   {errors[index]?.quantidade && (
@@ -85,6 +88,8 @@ export function ServiceOrderItemsEditor({
                       onChange(index, 'valorUnitario', formatMoneyInput(e.target.value))
                     }
                     placeholder="0,00"
+                    required
+                    aria-required
                     className={errors[index]?.valorUnitario ? 'input-error' : undefined}
                   />
                   {errors[index]?.valorUnitario && (

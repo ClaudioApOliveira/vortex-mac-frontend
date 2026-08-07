@@ -7,4 +7,6 @@ export const ROUTES = {
   users: '/usuarios',
   profile: '/perfil',
   myServiceOrders: '/minhas-ordens-servico',
+  myReports: '/meus-relatorios',
+  privacy: '/privacidade',
 } as const

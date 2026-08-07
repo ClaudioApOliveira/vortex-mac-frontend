@@ -6,6 +6,7 @@ import {
   updateVehicle,
 } from '../api/vehicles'
 import { useAuth } from '../contexts/AuthContext'
+import { emptyArray } from '../constants/empty'
 import { queryKeys } from '../lib/queryKeys'
 import type { VehicleFormData } from '../schemas/vehicle.schema'
 import { toVehiclePayload } from '../schemas/vehicle.schema'
@@ -74,7 +75,7 @@ export function useVehicles() {
     : null
 
   return {
-    vehicles: query.data ?? ([] as Vehicle[]),
+    vehicles: query.data ?? emptyArray<Vehicle>(),
     isLoading: query.isLoading,
     error,
     addVehicle: (clienteId: number, data: VehicleFormData) =>

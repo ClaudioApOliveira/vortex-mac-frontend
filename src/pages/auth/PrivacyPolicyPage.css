@@ -1,0 +1,76 @@
+.privacy-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem) 1rem 3rem;
+}
+
+.privacy-shell {
+  width: 100%;
+  max-width: 44rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.privacy-brand {
+  display: flex;
+  justify-content: center;
+}
+
+.privacy-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  padding: clamp(1.25rem, 3vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.privacy-header h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.5rem, 3vw, 1.875rem);
+  color: var(--text-primary);
+}
+
+.privacy-header p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.privacy-card section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.privacy-card section p,
+.privacy-card section li {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.privacy-card section ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.privacy-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}

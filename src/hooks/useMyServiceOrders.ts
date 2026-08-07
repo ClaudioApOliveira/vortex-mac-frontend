@@ -4,11 +4,13 @@ import {
   fetchMyServiceOrdersPage,
   rejectMyServiceOrder,
 } from '../api/auth'
+import { emptyArray } from '../constants/empty'
 import { canViewMyServiceOrders } from '../utils/permissions'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import { queryKeys } from '../lib/queryKeys'
 import { mapServiceOrder } from '../types'
+import type { ServiceOrder } from '../types'
 import { usePaginatedQuery } from './usePaginatedQuery'
 
 export function useMyServiceOrdersList(page: number, pageSize: number) {
@@ -25,6 +27,11 @@ export function useMyServiceOrdersList(page: number, pageSize: number) {
   })
 }
 
+interface MyServiceOrdersDashboardData {
+  serviceOrders: ServiceOrder[]
+  pendingBudgets: ServiceOrder[]
+}
+
 export function useMyServiceOrdersDashboard() {
   const { user, isAuthenticated } = useAuth()
   const enabled = isAuthenticated && canViewMyServiceOrders(user)
@@ -34,10 +41,17 @@ export function useMyServiceOrdersDashboard() {
     queryFn: fetchAllMyServiceOrders,
     enabled,
     staleTime: 30_000,
+    select: (data): MyServiceOrdersDashboardData => {
+      const serviceOrders = data.map(mapServiceOrder)
+      return {
+        serviceOrders,
+        pendingBudgets: serviceOrders.filter((order) => order.status === 'ORCAMENTO'),
+      }
+    },
   })
 
-  const serviceOrders = (query.data ?? []).map(mapServiceOrder)
-  const pendingBudgets = serviceOrders.filter((order) => order.status === 'ORCAMENTO')
+  const serviceOrders = query.data?.serviceOrders ?? emptyArray<ServiceOrder>()
+  const pendingBudgets = query.data?.pendingBudgets ?? emptyArray<ServiceOrder>()
 
   return {
     serviceOrders,

@@ -13,6 +13,11 @@ export function getServiceOrderStatusLabel(status: ServiceOrderStatus) {
   return SERVICE_ORDER_STATUS_LABELS[status]
 }
 
+/** OS concluída ou cancelada: sem edição completa (use ações de status para reabrir). */
+export function isServiceOrderLocked(status: ServiceOrderStatus) {
+  return status === 'CONCLUIDO' || status === 'CANCELADO'
+}
+
 export function getServiceOrderStatusClass(status: ServiceOrderStatus) {
   return `os-status os-status--${status.toLowerCase()}`
 }
@@ -42,10 +47,6 @@ export function formatServiceOrderDateTime(data: string, hora: string) {
 export function formatKm(value?: number | null) {
   if (value === undefined || value === null) return '—'
   return value.toLocaleString('pt-BR')
-}
-
-export function getServiceOrderItemTypeLabel(tipo: 'PECA' | 'SERVICO') {
-  return tipo === 'PECA' ? 'Peça' : 'Serviço'
 }
 
 const STATUS_HISTORY_ORIGIN_LABELS: Record<ServiceOrderStatusHistoryOrigin, string> = {

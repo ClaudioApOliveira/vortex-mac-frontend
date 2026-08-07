@@ -1,0 +1,10 @@
+.service-order-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.service-order-status-actions .btn {
+  white-space: nowrap;
+}

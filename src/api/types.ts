@@ -26,6 +26,11 @@ export interface UserResponse {
   perfil: UserProfile
   clienteId: number | null
   ativo?: boolean
+  deveDefinirSenha?: boolean
+  lgpdAceiteEm?: string | null
+  lgpdAceiteVersao?: string | null
+  lgpdExclusaoSolicitadaEm?: string | null
+  lgpdAnonimizadoEm?: string | null
   createdAt?: string
   updatedAt?: string
 }
@@ -88,6 +93,8 @@ export interface CustomerResponse {
   telefone: string | null
   usuarioId: number | null
   deveDefinirSenha?: boolean
+  lgpdExclusaoSolicitadaEm?: string | null
+  lgpdAnonimizadoEm?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -169,7 +176,7 @@ export interface VehicleRequest {
   kmAtual?: number
 }
 
-export type ServiceOrderItemType = 'PECA' | 'SERVICO'
+export type ServiceOrderItemType = 'PECA'
 
 export type ServiceOrderStatus =
   | 'ORCAMENTO'
@@ -232,6 +239,7 @@ export interface ServiceOrderResponse {
   custoPecas: number
   custoMaoDeObra: number
   descricaoMaoDeObra?: string | null
+  diagnosticoInicial?: string | null
   precoTotal: number
   status: ServiceOrderStatus
   itens: ServiceOrderItemResponse[]
@@ -251,6 +259,16 @@ export interface ServiceOrderRequest {
   descricaoServicosTerceirizados?: string | null
   custoMaoDeObra: number
   descricaoMaoDeObra?: string | null
+  diagnosticoInicial?: string | null
   status: ServiceOrderStatus
   itens: ServiceOrderItemRequest[]
+}
+
+export interface PersonalDataExportResponse {
+  exportadoEm: string
+  versaoPolitica: string
+  usuario: UserResponse
+  cliente: CustomerResponse | null
+  veiculos: VehicleResponse[]
+  ordensServico: ServiceOrderResponse[]
 }

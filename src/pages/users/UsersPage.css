@@ -1,4 +1,4 @@
-@import './CustomersPage.css';
+@import '../customers/CustomersPage.css';
 
 .status-badge {
   display: inline-block;

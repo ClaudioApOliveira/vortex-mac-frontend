@@ -1,9 +1,14 @@
+import { useMemo } from 'react'
 import {
   createServiceOrder,
   deleteServiceOrder,
   fetchServiceOrdersPage,
   updateServiceOrder,
+  updateServiceOrderStatus,
+  type ServiceOrderListFilters,
 } from '../api/serviceOrders'
+import type { ServiceOrderStatus } from '../api/types'
+import { emptyArray } from '../constants/empty'
 import type { ServiceOrderFormData } from '../schemas/serviceOrder.schema'
 import { toServiceOrderPayload } from '../schemas/serviceOrder.schema'
 import { mapServiceOrder } from '../types'
@@ -14,13 +19,19 @@ import { useAuth } from '../contexts/AuthContext'
 import { queryKeys } from '../lib/queryKeys'
 import { usePaginatedQuery } from './usePaginatedQuery'
 
-export function useServiceOrdersList(page: number, pageSize: number) {
+export type { ServiceOrderListFilters }
+
+export function useServiceOrdersList(
+  page: number,
+  pageSize: number,
+  filters: ServiceOrderListFilters = {},
+) {
   const { user, isAuthenticated } = useAuth()
   const enabled = isAuthenticated && canManageServiceOrders(user)
 
   return usePaginatedQuery({
-    queryKey: queryKeys.serviceOrders.all,
-    queryFn: fetchServiceOrdersPage,
+    queryKey: [...queryKeys.serviceOrders.all, filters],
+    queryFn: (p, size) => fetchServiceOrdersPage(p, size, filters),
     page,
     pageSize,
     enabled,
@@ -31,8 +42,13 @@ export function useServiceOrdersList(page: number, pageSize: number) {
 export function useServiceOrdersSummary(pageSize = 5) {
   const query = useServiceOrdersList(0, pageSize)
 
+  const serviceOrders = useMemo(
+    () => query.items.map(mapServiceOrder),
+    [query.items],
+  )
+
   return {
-    serviceOrders: query.items.map(mapServiceOrder),
+    serviceOrders,
     totalElements: query.totalElements,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
@@ -71,16 +87,44 @@ export function useServiceOrderMutations() {
     onSuccess: invalidateLists,
   })
 
+  const statusMutation = useMutation({
+    mutationFn: async ({
+      id,
+      status,
+      observacao,
+    }: {
+      id: number
+      status: ServiceOrderStatus
+      observacao?: string
+    }) => {
+      const updated = await updateServiceOrderStatus(id, status, observacao)
+      return mapServiceOrder(updated)
+    },
+    onSuccess: invalidateLists,
+  })
+
   return {
     addServiceOrder: (data: ServiceOrderFormData) => createMutation.mutateAsync(data),
     editServiceOrder: (id: number, data: ServiceOrderFormData) =>
       updateMutation.mutateAsync({ id, data }),
+    changeServiceOrderStatus: (
+      id: number,
+      status: ServiceOrderStatus,
+      observacao?: string,
+    ) => statusMutation.mutateAsync({ id, status, observacao }),
     removeServiceOrder: (id: number) => deleteMutation.mutateAsync(id),
     isMutating:
-      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending ||
+      statusMutation.isPending,
+    isChangingStatus: statusMutation.isPending,
   }
 }
 
-export function mapServiceOrdersPageItems(items: ReturnType<typeof useServiceOrdersList>['items']) {
-  return items.map(mapServiceOrder) as ServiceOrder[]
+export function mapServiceOrdersPageItems(
+  items: ReturnType<typeof useServiceOrdersList>['items'],
+): ServiceOrder[] {
+  if (items.length === 0) return emptyArray()
+  return items.map(mapServiceOrder)
 }

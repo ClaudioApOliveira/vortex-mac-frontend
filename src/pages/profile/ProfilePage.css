@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
-  max-width: 640px;
+  max-width: 720px;
 }
 
 .profile-card {
@@ -49,8 +49,33 @@
 .profile-form-actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.5rem;
+}
+
+.profile-privacy-actions {
+  justify-content: flex-start;
+}
+
+.profile-privacy-meta {
+  margin: 0 0 1rem;
+  padding-left: 1.1rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profile-privacy-meta a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.profile-privacy-meta a:hover {
+  text-decoration: underline;
 }
 
 .profile-success-banner {

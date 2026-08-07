@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createUser, deleteUser, fetchUsers, updateUser } from '../api/users'
 import type { UserRequest } from '../api/types'
 import { useAuth } from '../contexts/AuthContext'
+import { emptyArray } from '../constants/empty'
 import { queryKeys } from '../lib/queryKeys'
 import type { UserFormData } from '../schemas/user.schema'
 import { mapSystemUser } from '../types'
@@ -79,7 +80,7 @@ export function useUsers() {
     : null
 
   return {
-    users: query.data ?? ([] as SystemUser[]),
+    users: query.data ?? emptyArray<SystemUser>(),
     isLoading: query.isLoading,
     error,
     addUser: (data: UserFormData) => createMutation.mutateAsync(data),

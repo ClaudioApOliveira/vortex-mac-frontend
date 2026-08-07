@@ -5,7 +5,7 @@ import { ROUTES } from '../paths'
 import { canManageVehicles } from '../../utils/permissions'
 
 const VehiclesPage = lazyPage(() =>
-  import('../../pages/VehiclesPage').then((module) => ({
+  import('../../pages/vehicles/VehiclesPage').then((module) => ({
     default: module.VehiclesPage,
   })),
 )

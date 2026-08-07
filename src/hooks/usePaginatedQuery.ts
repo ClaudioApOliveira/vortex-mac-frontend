@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery, type UseQueryOptions } from '@tanstack/react-query'
 import type { PageResponse } from '../api/types'
+import { emptyArray } from '../constants/empty'
 import { QUERY_REFETCH_INTERVAL_MS } from '../constants/pagination'
 
 type PaginatedQueryOptions<T> = Omit<
@@ -39,7 +40,7 @@ export function usePaginatedQuery<T>({
 
   return {
     ...query,
-    items: query.data?.content ?? [],
+    items: query.data?.content ?? emptyArray<T>(),
     totalElements: query.data?.totalElements ?? 0,
     totalPages: query.data?.totalPages ?? 0,
     currentPage: query.data?.page ?? page,

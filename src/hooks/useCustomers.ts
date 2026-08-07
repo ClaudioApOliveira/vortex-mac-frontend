@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  anonymizeCustomer,
   createCustomer,
   deleteCustomer,
   fetchCustomers,
   updateCustomer,
 } from '../api/customers'
 import { useAuth } from '../contexts/AuthContext'
+import { emptyArray } from '../constants/empty'
 import { queryKeys } from '../lib/queryKeys'
 import type { CustomerFormData } from '../schemas/customer.schema'
 import { mapCustomer } from '../types'
@@ -55,20 +57,32 @@ export function useCustomers() {
     onSuccess: invalidate,
   })
 
+  const anonymizeMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const updated = await anonymizeCustomer(id)
+      return mapCustomer(updated)
+    },
+    onSuccess: invalidate,
+  })
+
   const error = query.error
     ? getSafeApiErrorMessage(query.error, 'Não foi possível carregar os clientes.')
     : null
 
   return {
-    customers: query.data ?? ([] as Customer[]),
+    customers: query.data ?? emptyArray<Customer>(),
     isLoading: query.isLoading,
     error,
     addCustomer: (data: CustomerFormData) => createMutation.mutateAsync(data),
     editCustomer: (id: number, data: CustomerFormData) =>
       updateMutation.mutateAsync({ id, data }),
     removeCustomer: (id: number) => deleteMutation.mutateAsync(id),
+    anonymizeCustomerData: (id: number) => anonymizeMutation.mutateAsync(id),
     refreshCustomers: invalidate,
     isMutating:
-      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      deleteMutation.isPending ||
+      anonymizeMutation.isPending,
   }
 }

@@ -18,9 +18,9 @@ import type { ServiceOrder } from '../../types'
 import type { Technician } from '../../types'
 import { mapTechnician } from '../../types'
 import { displayPlaca, formatMoneyFromNumber, formatMoneyInput } from '../../utils/masks'
-import { getEditableServiceOrderStatuses } from '../../utils/permissions'
+import { getFormStatusOptions } from '../../utils/serviceOrderTransitions'
 import { formatCurrency, getServiceOrderStatusLabel } from '../../utils/serviceOrder'
-import { FormField } from '../ui/FormField'
+import { FormField, RequiredMark } from '../ui/FormField'
 import { Modal } from '../ui/Modal'
 import { ServiceOrderItemsEditor } from './ServiceOrderItemsEditor'
 import { ServiceOrderStatusBadge } from './ServiceOrderStatusBadge'
@@ -36,6 +36,7 @@ interface ServiceOrderFormModalProps {
   onSubmit: (data: ServiceOrderFormData) => Promise<void>
   isSubmitting?: boolean
   serviceOrder?: ServiceOrder | null
+  submitError?: string | null
 }
 
 type FormErrors = Partial<Record<keyof ServiceOrderFormData, string>>
@@ -74,6 +75,7 @@ function toFormData(serviceOrder: ServiceOrder): ServiceOrderFormData {
     hora: serviceOrder.hora.slice(0, 5),
     kmEntrada: serviceOrder.kmEntrada !== undefined ? String(serviceOrder.kmEntrada) : '',
     kmSaida: serviceOrder.kmSaida !== undefined ? String(serviceOrder.kmSaida) : '',
+    diagnosticoInicial: serviceOrder.diagnosticoInicial ?? '',
     custoServicosTerceirizados: formatMoneyFromNumber(serviceOrder.custoServicosTerceirizados),
     descricaoServicosTerceirizados: serviceOrder.descricaoServicosTerceirizados ?? '',
     custoMaoDeObra: formatMoneyFromNumber(serviceOrder.custoMaoDeObra),
@@ -83,7 +85,7 @@ function toFormData(serviceOrder: ServiceOrder): ServiceOrderFormData {
       descricao: item.descricao,
       quantidade: String(item.quantidade).replace('.', ','),
       valorUnitario: formatMoneyFromNumber(item.valorUnitario),
-      tipo: item.tipo,
+      tipo: 'PECA' as const,
     })),
   }
 }
@@ -94,6 +96,7 @@ export function ServiceOrderFormModal({
   onSubmit,
   isSubmitting = false,
   serviceOrder = null,
+  submitError = null,
 }: ServiceOrderFormModalProps) {
   const isEditing = serviceOrder !== null
   const { user } = useAuth()
@@ -108,10 +111,13 @@ export function ServiceOrderFormModal({
   const [isLoadingStatusHistory, setIsLoadingStatusHistory] = useState(false)
   const [statusHistoryError, setStatusHistoryError] = useState<string | null>(null)
 
-  const editableStatuses = useMemo(() => getEditableServiceOrderStatuses(user), [user])
+  const statusOptions = useMemo(() => {
+    if (!isEditing || !serviceOrder) return []
+    return getFormStatusOptions(serviceOrder.status, user)
+  }, [isEditing, serviceOrder, user])
   const isTechnicianWithApprovedStatus =
-    user?.perfil === 'TECNICO' && form.status === 'APROVADO'
-  const canSelectCurrentStatus = editableStatuses.includes(form.status)
+    user?.perfil === 'TECNICO' && serviceOrder?.status === 'APROVADO'
+  const canSelectCurrentStatus = statusOptions.includes(form.status)
 
   const customerVehicles = useMemo(
     () =>
@@ -192,6 +198,17 @@ export function ServiceOrderFormModal({
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (!isOpen || isEditing || !user) return
+    if (user.perfil !== 'TECNICO' && user.perfil !== 'GERENTE') return
+    if (!technicians.some((technician) => technician.id === user.id)) return
+
+    setForm((prev) => {
+      if (prev.tecnicoId) return prev
+      return { ...prev, tecnicoId: String(user.id) }
+    })
+  }, [isOpen, isEditing, user, technicians])
+
   const handleClose = () => {
     if (isSubmitting) return
     setForm(emptyServiceOrderForm)
@@ -261,10 +278,14 @@ export function ServiceOrderFormModal({
       return
     }
 
-    await onSubmit(result.data)
-    setForm(emptyServiceOrderForm)
-    setErrors({})
-    setItemErrors({})
+    try {
+      await onSubmit(result.data)
+      setForm(emptyServiceOrderForm)
+      setErrors({})
+      setItemErrors({})
+    } catch {
+      // submitError é exibido pelo parent dentro do modal
+    }
   }
 
   return (
@@ -302,11 +323,29 @@ export function ServiceOrderFormModal({
         onSubmit={handleSubmit}
         noValidate
       >
+        <p className="form-required-hint">
+          <RequiredMark /> Campos obrigatórios
+        </p>
+        {submitError && <p className="form-error-banner">{submitError}</p>}
         <fieldset className="form-section">
           <legend>Atendimento</legend>
           <div className="form-field">
-            <label htmlFor="status">Status</label>
-            {isTechnicianWithApprovedStatus ? (
+            <label htmlFor="status">
+              Status
+              <RequiredMark />
+            </label>
+            {!isEditing ? (
+              <>
+                <div className="service-order-status-readonly">
+                  <ServiceOrderStatusBadge status="ORCAMENTO" />
+                </div>
+                <p className="field-hint">
+                  Novas OS começam como orçamento. Avance o status depois, na lista ou no
+                  detalhe.
+                </p>
+                <input type="hidden" name="status" value="ORCAMENTO" />
+              </>
+            ) : isTechnicianWithApprovedStatus ? (
               <>
                 <div className="service-order-status-readonly">
                   <ServiceOrderStatusBadge status={form.status} />
@@ -326,11 +365,13 @@ export function ServiceOrderFormModal({
                   className={errors.status ? 'input-error' : undefined}
                 >
                   <option value="">Manter aprovado</option>
-                  {editableStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {getServiceOrderStatusLabel(status)}
-                    </option>
-                  ))}
+                  {statusOptions
+                    .filter((status) => status !== 'APROVADO')
+                    .map((status) => (
+                      <option key={status} value={status}>
+                        {getServiceOrderStatusLabel(status)}
+                      </option>
+                    ))}
                 </select>
               </>
             ) : (
@@ -343,14 +384,14 @@ export function ServiceOrderFormModal({
                 }
                 className={errors.status ? 'input-error' : undefined}
               >
-                {editableStatuses.map((status) => (
+                {statusOptions.map((status) => (
                   <option key={status} value={status}>
                     {getServiceOrderStatusLabel(status)}
                   </option>
                 ))}
               </select>
             )}
-            {user?.perfil === 'TECNICO' && !isTechnicianWithApprovedStatus && (
+            {user?.perfil === 'TECNICO' && isEditing && !isTechnicianWithApprovedStatus && (
               <p className="field-hint">
                 Técnicos não podem aprovar orçamentos. A aprovação é feita pelo cliente,
                 gerente ou administrador.
@@ -367,6 +408,7 @@ export function ServiceOrderFormModal({
               value={form.data}
               onChange={(e) => updateField('data', e.target.value)}
               error={errors.data}
+              required
             />
             <FormField
               label="Hora"
@@ -375,11 +417,15 @@ export function ServiceOrderFormModal({
               value={form.hora}
               onChange={(e) => updateField('hora', e.target.value)}
               error={errors.hora}
+              required
             />
           </div>
 
           <div className="form-field">
-            <label htmlFor="clienteId">Proprietário</label>
+            <label htmlFor="clienteId">
+              Proprietário
+              <RequiredMark />
+            </label>
             <select
               id="clienteId"
               name="clienteId"
@@ -411,7 +457,10 @@ export function ServiceOrderFormModal({
 
           <div className="form-row">
             <div className="form-field">
-              <label htmlFor="veiculoId">Veículo</label>
+              <label htmlFor="veiculoId">
+                Veículo
+                <RequiredMark />
+              </label>
               <select
                 id="veiculoId"
                 name="veiculoId"
@@ -433,7 +482,10 @@ export function ServiceOrderFormModal({
             </div>
 
             <div className="form-field">
-              <label htmlFor="tecnicoId">Técnico</label>
+              <label htmlFor="tecnicoId">
+                Responsável
+                <RequiredMark />
+              </label>
               <select
                 id="tecnicoId"
                 name="tecnicoId"
@@ -443,7 +495,9 @@ export function ServiceOrderFormModal({
                 className={errors.tecnicoId ? 'input-error' : undefined}
               >
                 <option value="">
-                  {isLoadingTechnicians ? 'Carregando técnicos...' : 'Selecione o técnico'}
+                  {isLoadingTechnicians
+                    ? 'Carregando responsáveis...'
+                    : 'Selecione o responsável'}
                 </option>
                 {technicians.map((technician) => (
                   <option key={technician.id} value={technician.id}>
@@ -475,6 +529,22 @@ export function ServiceOrderFormModal({
               min={0}
             />
           </div>
+
+          <div className="form-field">
+            <label htmlFor="diagnosticoInicial">Diagnóstico</label>
+            <textarea
+              id="diagnosticoInicial"
+              name="diagnosticoInicial"
+              rows={4}
+              value={form.diagnosticoInicial ?? ''}
+              onChange={(e) => updateField('diagnosticoInicial', e.target.value)}
+              placeholder="Ex.: Cliente relata ruído ao frear; verificar pastilhas e discos. Complementar após inspeção..."
+              className={errors.diagnosticoInicial ? 'input-error' : undefined}
+            />
+            {errors.diagnosticoInicial && (
+              <span className="field-error">{errors.diagnosticoInicial}</span>
+            )}
+          </div>
         </fieldset>
 
         <fieldset className="form-section">
@@ -493,7 +563,7 @@ export function ServiceOrderFormModal({
           <legend>Totais</legend>
           <div className="form-row">
             <FormField
-              label="Custo serviços terceirizados (A)"
+              label="Serviços terceirizados"
               name="custoServicosTerceirizados"
               type="text"
               inputMode="decimal"
@@ -502,9 +572,10 @@ export function ServiceOrderFormModal({
                 updateField('custoServicosTerceirizados', formatMoneyInput(e.target.value))
               }
               error={errors.custoServicosTerceirizados}
+              required
             />
             <FormField
-              label="Custo mão de obra (C)"
+              label="Mão de obra"
               name="custoMaoDeObra"
               type="text"
               inputMode="decimal"
@@ -512,6 +583,7 @@ export function ServiceOrderFormModal({
               onChange={(e) => updateField('custoMaoDeObra', formatMoneyInput(e.target.value))}
               error={errors.custoMaoDeObra}
               placeholder="0,00"
+              required
             />
           </div>
 
@@ -552,15 +624,19 @@ export function ServiceOrderFormModal({
 
           <div className="os-totals">
             <div className="os-total-item">
-              <span>Custo peças (B)</span>
+              <span>Serviços terceirizados</span>
+              <strong>{formatCurrency(totals.custoServicosTerceirizados)}</strong>
+            </div>
+            <div className="os-total-item">
+              <span>Peças</span>
               <strong>{formatCurrency(totals.custoPecas)}</strong>
             </div>
             <div className="os-total-item">
-              <span>Custo mão de obra (C)</span>
+              <span>Mão de obra</span>
               <strong>{formatCurrency(totals.custoMaoDeObra)}</strong>
             </div>
             <div className="os-total-item os-total-item--highlight">
-              <span>Preço total (A + B + C)</span>
+              <span>Preço total</span>
               <strong>{formatCurrency(totals.precoTotal)}</strong>
             </div>
           </div>
