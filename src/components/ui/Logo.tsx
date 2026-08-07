@@ -1,4 +1,5 @@
-import logo from '../../assets/logo-vortex.png'
+import logoFull from '../../assets/logo-vortex.webp'
+import logoMark from '../../assets/logo-vortex-mark-80.webp'
 import './Logo.css'
 
 interface LogoProps {
@@ -6,12 +7,19 @@ interface LogoProps {
   className?: string
 }
 
+const ALT_FULL = 'Vortex Mec - Sistema de Gerenciamento de Oficina'
+const ALT_MARK = 'Vortex Mec'
+
 export function Logo({ variant = 'full', className = '' }: LogoProps) {
+  const isMark = variant === 'icon'
+
   return (
     <img
-      src={logo}
-      alt="Vortex Mec - Sistema de Gerenciamento de Oficina"
+      src={isMark ? logoMark : logoFull}
+      alt={isMark ? ALT_MARK : ALT_FULL}
       className={`logo logo--${variant} ${className}`.trim()}
+      decoding="async"
+      draggable={false}
     />
   )
 }
