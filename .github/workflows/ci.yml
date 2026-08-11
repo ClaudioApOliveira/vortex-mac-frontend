@@ -13,12 +13,16 @@ defaults:
   run:
     shell: bash
 
+env:
+  LOCAL_IMAGE: vortex-mec-frontend
+  HUB_IMAGE: oliveiraclaudio/vortex-mec-frontend
+  SMOKE_NAME: vortex-mec-frontend-ci
+  SMOKE_PORT: '8088'
+
 jobs:
   quality:
     name: Lint & Build
-    # Runner self-hosted em ~/actions-runner-2 (label: vortex-mec-frontend)
     runs-on: [self-hosted, vortex-mec-frontend]
-    # Evita executar PRs de forks no runner self-hosted (risco de execução de código não confiável).
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
@@ -42,14 +46,14 @@ jobs:
           VITE_API_URL: ''
 
   docker:
-    name: Docker Build
+    name: Docker
     runs-on: [self-hosted, vortex-mec-frontend]
     needs: quality
     environment: DOCKERHUB
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
 
     steps:
       - name: Checkout
@@ -64,28 +68,109 @@ jobs:
       - name: Build image
         run: |
           set -euo pipefail
-          # Sem "# syntax=docker/dockerfile:…" — evita pull extra em auth.docker.io no runner.
           docker build \
-            --tag "vortex-mec-frontend:${{ github.sha }}" \
-            --tag "vortex-mec-frontend:latest" \
+            --tag "${LOCAL_IMAGE}:${GITHUB_SHA}" \
+            --tag "${LOCAL_IMAGE}:latest" \
             .
 
-      - name: Smoke test container
+      - name: Smoke test
         run: |
-          docker rm -f vortex-mec-frontend-ci || true
-          docker run -d --name vortex-mec-frontend-ci -p 8088:8080 "vortex-mec-frontend:${{ github.sha }}"
+          set -euo pipefail
+          docker rm -f "${SMOKE_NAME}" || true
+          docker run -d --name "${SMOKE_NAME}" -p "${SMOKE_PORT}:8080" "${LOCAL_IMAGE}:${GITHUB_SHA}"
           for i in {1..15}; do
-            if curl -fsS http://127.0.0.1:8088/ > /dev/null; then
+            if curl -fsS "http://127.0.0.1:${SMOKE_PORT}/" > /dev/null; then
               echo "Container responded successfully"
               exit 0
             fi
             sleep 1
           done
           echo "Container failed to respond"
-          docker logs vortex-mec-frontend-ci
+          docker logs "${SMOKE_NAME}"
           exit 1
 
-      - name: Run Trivy vulnerability scanner
+      - name: Stop smoke container
+        if: always()
+        run: docker rm -f "${SMOKE_NAME}" || true
+
+  zap:
+    name: OWASP ZAP
+    runs-on: [self-hosted, vortex-mec-frontend]
+    needs: docker
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start target
+        run: |
+          set -euo pipefail
+          docker rm -f "${SMOKE_NAME}" || true
+          docker run -d --name "${SMOKE_NAME}" -p "${SMOKE_PORT}:8080" "${LOCAL_IMAGE}:${GITHUB_SHA}"
+          for i in {1..15}; do
+            if curl -fsS "http://127.0.0.1:${SMOKE_PORT}/" > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs "${SMOKE_NAME}"
+          exit 1
+
+      - name: Baseline scan
+        run: |
+          set -euo pipefail
+          REPORT_DIR="${RUNNER_TEMP}/zap-reports"
+          mkdir -p "$REPORT_DIR"
+          cp .zap/rules.tsv "$REPORT_DIR/rules.tsv"
+          chmod -R a+rwx "$REPORT_DIR"
+
+          ZAP_IMAGE="ghcr.io/zaproxy/zaproxy:stable"
+          if ! docker pull "$ZAP_IMAGE"; then
+            echo "ghcr.io indisponível, tentando Docker Hub..."
+            ZAP_IMAGE="zaproxy/zap-stable"
+            docker pull "$ZAP_IMAGE"
+          fi
+
+          set +e
+          docker run --rm --network host \
+            -v "${REPORT_DIR}:/zap/wrk:rw" \
+            "$ZAP_IMAGE" \
+            zap-baseline.py \
+              -t "http://127.0.0.1:${SMOKE_PORT}" \
+              -c rules.tsv \
+              -r zap-report.html \
+              -J zap-report.json \
+              -w zap-report.md
+          code=$?
+          set -e
+
+          echo "ZAP exit code: ${code} (0=ok, 1=FAIL, 2=WARN, 3=erro)"
+          if [ "$code" -eq 1 ] || [ "$code" -ge 3 ]; then
+            exit "$code"
+          fi
+
+      - name: Publicar relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: ${{ runner.temp }}/zap-reports/zap-report.*
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Stop target
+        if: always()
+        run: docker rm -f "${SMOKE_NAME}" || true
+
+  trivy:
+    name: Trivy
+    runs-on: [self-hosted, vortex-mec-frontend]
+    needs: docker
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Scan image
         run: |
           set -euo pipefail
           if ! command -v trivy >/dev/null 2>&1; then
@@ -98,22 +183,34 @@ jobs:
             --ignore-unfixed \
             --vuln-type os,library \
             --severity CRITICAL,HIGH \
-            "vortex-mec-frontend:${GITHUB_SHA}"
+            "${LOCAL_IMAGE}:${GITHUB_SHA}"
 
-      - name: Push image to Docker Hub
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          IMAGE: oliveiraclaudio/vortex-mec-frontend
+  publish:
+    name: Publish
+    runs-on: [self-hosted, vortex-mec-frontend]
+    needs: [zap, trivy]
+    environment: DOCKERHUB
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Push image
         run: |
           set -euo pipefail
           SHORT_SHA="${GITHUB_SHA::7}"
-          docker tag "vortex-mec-frontend:${GITHUB_SHA}" "${IMAGE}:latest"
-          docker tag "vortex-mec-frontend:${GITHUB_SHA}" "${IMAGE}:${SHORT_SHA}"
-          docker push "${IMAGE}:latest"
-          docker push "${IMAGE}:${SHORT_SHA}"
+          docker tag "${LOCAL_IMAGE}:${GITHUB_SHA}" "${HUB_IMAGE}:latest"
+          docker tag "${LOCAL_IMAGE}:${GITHUB_SHA}" "${HUB_IMAGE}:${SHORT_SHA}"
+          docker push "${HUB_IMAGE}:latest"
+          docker push "${HUB_IMAGE}:${SHORT_SHA}"
 
       - name: Cleanup
         if: always()
-        run: |
-          docker rm -f vortex-mec-frontend-ci || true
-          docker image prune -f || true
+        run: docker image prune -f || true
