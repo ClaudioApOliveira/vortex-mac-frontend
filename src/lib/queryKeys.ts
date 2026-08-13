@@ -9,6 +9,7 @@ export const queryKeys = {
   },
   customers: {
     all: ['customers'] as const,
+    deletionRequests: ['customers', 'deletion-requests'] as const,
   },
   vehicles: {
     all: ['vehicles'] as const,

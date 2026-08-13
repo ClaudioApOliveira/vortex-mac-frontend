@@ -1,7 +1,6 @@
 import { z } from 'zod'
+import { isPlacaValid } from '../utils/documentValidation'
 import { parseAnoFabModelo } from '../utils/masks'
-
-const placaRegex = /^[A-Z]{3}-?\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/
 const ANO_MIN = 1900
 export const ANO_VEICULO_MAX = new Date().getFullYear()
 
@@ -47,7 +46,7 @@ export const vehicleFormInputSchema = z.object({
     .string()
     .min(1, 'Placa é obrigatória')
     .max(10, 'Placa deve ter no máximo 10 caracteres')
-    .refine((val) => placaRegex.test(val.replace(/[^A-Z0-9]/gi, '').toUpperCase()), {
+    .refine((val) => isPlacaValid(val), {
       message: 'Placa inválida (ex: ABC-1234 ou ABC1D23)',
     }),
   marca: z

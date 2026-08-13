@@ -1,9 +1,7 @@
 import { z } from 'zod'
+import { isCepValid, isCpfOrCnpjValid } from '../utils/documentValidation'
 
-const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/
-const cnpjRegex = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/
 const phoneRegex = /^\(\d{2}\)\s\d{4,5}-\d{4}$/
-const cepRegex = /^\d{5}-?\d{3}$/
 
 const optionalText = (max: number, label: string) =>
   z
@@ -25,7 +23,7 @@ export const customerSchema = z.object({
   cpf: z
     .string()
     .optional()
-    .refine((val) => !val || cpfRegex.test(val) || cnpjRegex.test(val), {
+    .refine((val) => !val || isCpfOrCnpjValid(val), {
       message: 'CPF/CNPJ inválido',
     }),
   telefone: z
@@ -37,7 +35,7 @@ export const customerSchema = z.object({
     .string()
     .min(1, 'CEP é obrigatório')
     .max(9, 'CEP deve ter no máximo 9 caracteres')
-    .regex(cepRegex, 'CEP inválido (ex: 01310-100)'),
+    .refine(isCepValid, { message: 'CEP inválido (ex: 01310-100)' }),
   logradouro: optionalText(255, 'Logradouro'),
   complemento: optionalText(255, 'Complemento'),
   numero: optionalText(20, 'Número'),

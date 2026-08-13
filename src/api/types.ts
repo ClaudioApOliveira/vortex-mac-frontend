@@ -95,6 +95,8 @@ export interface CustomerResponse {
   deveDefinirSenha?: boolean
   lgpdExclusaoSolicitadaEm?: string | null
   lgpdAnonimizadoEm?: string | null
+  lgpdAnonimizadoPorId?: number | null
+  lgpdAnonimizadoPorNome?: string | null
   createdAt: string
   updatedAt: string
 }

@@ -4,6 +4,7 @@ import { VehicleFormModal } from '../../components/vehicles/VehicleFormModal'
 import { Pagination } from '../../components/ui/Pagination'
 import '../../components/ui/Pagination.css'
 import { DEFAULT_PAGE_SIZE } from '../../constants/pagination'
+import { useAuth } from '../../contexts/AuthContext'
 import { useVehicles } from '../../hooks/useVehicles'
 import { useConfirmDialog } from '../../hooks/useConfirmDialog'
 import { usePaginationState } from '../../hooks/usePaginationState'
@@ -11,9 +12,11 @@ import type { VehicleFormData } from '../../schemas/vehicle.schema'
 import type { Vehicle } from '../../types'
 import { getSafeApiErrorMessage } from '../../utils/apiMessages'
 import { displayAnoFabModelo, displayPlaca } from '../../utils/masks'
+import { canDeleteVehicles } from '../../utils/permissions'
 import '../customers/CustomersPage.css'
 
 export function VehiclesPage() {
+  const { user } = useAuth()
   const { vehicles, isLoading, error, addVehicle, editVehicle, removeVehicle } = useVehicles()
   const { confirm, ConfirmDialog } = useConfirmDialog()
   const { page, pageSize, setPage, setPageSize } = usePaginationState(DEFAULT_PAGE_SIZE)
@@ -21,6 +24,7 @@ export function VehiclesPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const canDelete = canDeleteVehicles(user)
 
   const totalElements = vehicles.length
   const totalPages = Math.max(1, Math.ceil(totalElements / pageSize))
@@ -161,13 +165,15 @@ export function VehiclesPage() {
                         >
                           Editar
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleDelete(vehicle)}
-                        >
-                          Excluir
-                        </button>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDelete(vehicle)}
+                          >
+                            Excluir
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

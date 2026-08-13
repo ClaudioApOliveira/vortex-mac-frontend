@@ -23,6 +23,7 @@ import {
 } from '../../schemas/profile.schema'
 import { mapZodErrors } from '../../utils/mapZodErrors'
 import { formatDateTime } from '../../utils/serviceOrder'
+import { canAccessLgpdPrivacy } from '../../utils/permissions'
 import './ProfilePage.css'
 
 const emptyPasswordForm: ChangePasswordFormData = {
@@ -225,6 +226,7 @@ export function ProfilePage() {
     !user.lgpdAceiteEm || user.lgpdAceiteVersao !== LGPD_POLICY_VERSION
   const deletionRequested = Boolean(user.lgpdExclusaoSolicitadaEm)
   const anonymized = Boolean(user.lgpdAnonimizadoEm)
+  const showLgpdPrivacy = canAccessLgpdPrivacy(user)
 
   return (
     <div className="page">
@@ -345,6 +347,7 @@ export function ProfilePage() {
           </form>
         </section>
 
+        {showLgpdPrivacy && (
         <section className="profile-card profile-card--wide">
           <h2>Privacidade (LGPD)</h2>
           <p className="profile-card-description">
@@ -410,6 +413,7 @@ export function ProfilePage() {
             )}
           </div>
         </section>
+        )}
       </div>
 
       <ConfirmDialog />

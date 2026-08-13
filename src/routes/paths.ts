@@ -9,4 +9,6 @@ export const ROUTES = {
   myServiceOrders: '/minhas-ordens-servico',
   myReports: '/meus-relatorios',
   privacy: '/privacidade',
+  lgpdQueue: '/lgpd/solicitacoes',
+  reports: '/relatorios',
 } as const

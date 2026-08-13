@@ -1,6 +1,6 @@
 # OWASP ZAP baseline — ruleId<TAB>IGNORE|WARN|FAIL
 # Scan local HTTP do container de CI; HSTS não se aplica.
 10035	IGNORE	(HSTS — alvo do CI é HTTP local)
-# CSP ainda não está no nginx; não bloqueia a esteira. Tratar depois.
-10038	WARN	(Content Security Policy Header Not Set)
+# CSP configurado em nginx/default.conf
+10038	IGNORE	(Content Security Policy — presente no nginx de produção)
 10063	WARN	(Permissions Policy Header Not Set)

@@ -27,6 +27,8 @@ export interface Customer {
   usuarioId?: number | null
   lgpdExclusaoSolicitadaEm?: string | null
   lgpdAnonimizadoEm?: string | null
+  lgpdAnonimizadoPorId?: number | null
+  lgpdAnonimizadoPorNome?: string | null
   criadoEm: string
   atualizadoEm: string
 }
@@ -135,6 +137,8 @@ export function mapCustomer(response: CustomerResponse): Customer {
     usuarioId: response.usuarioId,
     lgpdExclusaoSolicitadaEm: response.lgpdExclusaoSolicitadaEm,
     lgpdAnonimizadoEm: response.lgpdAnonimizadoEm,
+    lgpdAnonimizadoPorId: response.lgpdAnonimizadoPorId,
+    lgpdAnonimizadoPorNome: response.lgpdAnonimizadoPorNome,
     criadoEm: response.createdAt,
     atualizadoEm: response.updatedAt,
   }

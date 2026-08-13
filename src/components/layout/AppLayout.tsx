@@ -1,8 +1,26 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Car, ClipboardList, FileText, Home, LogOut, Shield, Users, type LucideIcon } from 'lucide-react'
+import {
+  Car,
+  ClipboardList,
+  FileText,
+  Home,
+  LogOut,
+  Shield,
+  ShieldAlert,
+  Users,
+  type LucideIcon,
+} from 'lucide-react'
 import { ROUTES } from '../../routes/paths'
 import { useAuth } from '../../contexts/AuthContext'
-import { canManageCustomers, canManageServiceOrders, canManageUsers, canManageVehicles, canViewMyServiceOrders } from '../../utils/permissions'
+import {
+  canAccessLgpdQueue,
+  canAccessOfficeReports,
+  canManageCustomers,
+  canManageServiceOrders,
+  canManageUsers,
+  canManageVehicles,
+  canViewMyServiceOrders,
+} from '../../utils/permissions'
 import type { User } from '../../types'
 import { Logo } from '../ui/Logo'
 import './AppLayout.css'
@@ -33,6 +51,12 @@ const navItems: Array<{
     show: canManageCustomers,
   },
   {
+    to: ROUTES.lgpdQueue,
+    label: 'LGPD',
+    icon: ShieldAlert,
+    show: canAccessLgpdQueue,
+  },
+  {
     to: ROUTES.vehicles,
     label: 'Veículos',
     icon: Car,
@@ -43,6 +67,12 @@ const navItems: Array<{
     label: 'Ordens de Serviço',
     icon: ClipboardList,
     show: canManageServiceOrders,
+  },
+  {
+    to: ROUTES.reports,
+    label: 'Relatórios',
+    icon: FileText,
+    show: canAccessOfficeReports,
   },
   {
     to: ROUTES.users,
