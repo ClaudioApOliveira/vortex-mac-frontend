@@ -9,6 +9,8 @@ import type { Customer, SystemUser } from '../../types'
 import { canManageAdminUsers, getProfileLabel } from '../../utils/permissions'
 import { mapZodErrors } from '../../utils/mapZodErrors'
 import { FormField } from '../ui/FormField'
+import { PasswordField } from '../ui/PasswordField'
+import { SelectField } from '../ui/SelectField'
 import { Modal } from '../ui/Modal'
 import '../ui/FormModal.css'
 import './UserFormModal.css'
@@ -143,56 +145,47 @@ export function UserFormModal({
           error={errors.email}
           placeholder="usuario@vortex.com"
         />
-        <FormField
+        <PasswordField
           label={isEditing ? 'Nova senha (opcional)' : 'Senha'}
           name="senha"
-          type="password"
           value={form.senha ?? ''}
           onChange={(e) => updateField('senha', e.target.value)}
           error={errors.senha}
           placeholder={isEditing ? 'Deixe em branco para manter' : '••••••••'}
+          autoComplete="new-password"
+          required={!isEditing}
         />
 
-        <div className="form-field">
-          <label htmlFor="perfil">Perfil</label>
-          <select
-            id="perfil"
-            name="perfil"
-            className={errors.perfil ? 'input-error' : ''}
-            value={form.perfil}
-            onChange={(e) =>
-              updateField('perfil', e.target.value as UserFormData['perfil'])
-            }
-          >
-            {allowAdminProfile && <option value="ADMIN">Administrador</option>}
-            <option value="GERENTE">Gerente</option>
-            <option value="TECNICO">Técnico</option>
-            <option value="CLIENTE">Cliente</option>
-          </select>
-          {errors.perfil && <span className="field-error">{errors.perfil}</span>}
-        </div>
+        <SelectField
+          label="Perfil"
+          name="perfil"
+          value={form.perfil}
+          onChange={(e) =>
+            updateField('perfil', e.target.value as UserFormData['perfil'])
+          }
+          error={errors.perfil}
+        >
+          {allowAdminProfile && <option value="ADMIN">Administrador</option>}
+          <option value="GERENTE">Gerente</option>
+          <option value="TECNICO">Técnico</option>
+          <option value="CLIENTE">Cliente</option>
+        </SelectField>
 
         {form.perfil === 'CLIENTE' && (
-          <div className="form-field">
-            <label htmlFor="clienteId">Cliente vinculado</label>
-            <select
-              id="clienteId"
-              name="clienteId"
-              className={errors.clienteId ? 'input-error' : ''}
-              value={form.clienteId ?? ''}
-              onChange={(e) => updateField('clienteId', e.target.value)}
-            >
-              <option value="">Selecione um cliente</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.nome}
-                </option>
-              ))}
-            </select>
-            {errors.clienteId && (
-              <span className="field-error">{errors.clienteId}</span>
-            )}
-          </div>
+          <SelectField
+            label="Cliente vinculado"
+            name="clienteId"
+            value={form.clienteId ?? ''}
+            onChange={(e) => updateField('clienteId', e.target.value)}
+            error={errors.clienteId}
+          >
+            <option value="">Selecione um cliente</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.nome}
+              </option>
+            ))}
+          </SelectField>
         )}
 
         <label className="checkbox-field">

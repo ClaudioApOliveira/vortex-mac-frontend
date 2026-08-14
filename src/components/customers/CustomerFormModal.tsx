@@ -13,12 +13,11 @@ import { fetchAddressByCep, findMunicipio, formatCep } from '../../utils/address
 import { BRAZILIAN_STATES, getStateName } from '../../utils/brazilianStates'
 import { formatCpfCnpj, formatPhone } from '../../utils/masks'
 import { FormField } from '../ui/FormField'
+import { SelectField } from '../ui/SelectField'
 import { Modal } from '../ui/Modal'
 import { VehicleFormFields } from '../vehicles/VehicleFormFields'
 import { mapZodErrors } from '../../utils/mapZodErrors'
 import '../ui/FormModal.css'
-import './CustomerFormModal.css'
-import '../vehicles/VehicleFormFields.css'
 
 interface CustomerFormModalProps {
   isOpen: boolean
@@ -411,92 +410,79 @@ export function CustomerFormModal({
           />
 
           <div className="form-row form-row--city">
-            <div className="form-field">
-              <label htmlFor="uf">UF</label>
-              <select
-                id="uf"
-                name="uf"
-                value={form.uf ?? ''}
-                disabled={isAddressFromCep}
-                onChange={(e) => {
-                  const uf = e.target.value
-                  setForm((prev) => ({
-                    ...prev,
-                    uf,
-                    cidade: '',
-                    ibge: '',
-                    estado: getStateName(uf) ?? '',
-                  }))
-                  setErrors((prev) => ({
-                    ...prev,
-                    uf: undefined,
-                    cidade: undefined,
-                  }))
-                  setMunicipioMessage(null)
-                }}
-                className={errors.uf ? 'input-error' : undefined}
-              >
-                <option value="">Selecione a UF</option>
-                {BRAZILIAN_STATES.map((state) => (
-                  <option key={state.uf} value={state.uf}>
-                    {state.uf} — {state.nome}
-                  </option>
-                ))}
-              </select>
-              {errors.uf && <span className="field-error">{errors.uf}</span>}
-            </div>
-            <div className="form-field">
-              <label htmlFor="cidade">Cidade</label>
-              <select
-                id="cidade"
-                name="cidade"
-                value={form.ibge ?? ''}
-                disabled={isAddressFromCep || !form.uf || isLoadingMunicipios}
-                onChange={(e) => {
-                  const selected = municipios.find(
-                    (municipio) => String(municipio.id) === e.target.value,
-                  )
-                  if (selected) {
-                    updateField('ibge', String(selected.id))
-                    updateField('cidade', selected.nome)
-                    updateField('estado', getStateName(selected.uf) ?? '')
-                  } else {
-                    updateField('ibge', '')
-                    updateField('cidade', '')
-                  }
-                }}
-                className={errors.cidade ? 'input-error' : undefined}
-              >
-                <option value="">
-                  {!form.uf
-                    ? 'Selecione a UF primeiro'
-                    : isLoadingMunicipios
-                      ? 'Carregando municípios...'
-                      : municipios.length === 0
-                        ? 'Nenhum município encontrado'
-                        : 'Selecione a cidade'}
+            <SelectField
+              label="UF"
+              name="uf"
+              value={form.uf ?? ''}
+              disabled={isAddressFromCep}
+              onChange={(e) => {
+                const uf = e.target.value
+                setForm((prev) => ({
+                  ...prev,
+                  uf,
+                  cidade: '',
+                  ibge: '',
+                  estado: getStateName(uf) ?? '',
+                }))
+                setErrors((prev) => ({
+                  ...prev,
+                  uf: undefined,
+                  cidade: undefined,
+                }))
+                setMunicipioMessage(null)
+              }}
+              error={errors.uf}
+            >
+              <option value="">Selecione a UF</option>
+              {BRAZILIAN_STATES.map((state) => (
+                <option key={state.uf} value={state.uf}>
+                  {state.uf} — {state.nome}
                 </option>
-                {municipios.map((municipio) => (
-                  <option key={municipio.id} value={municipio.id}>
-                    {municipio.nome}
-                  </option>
-                ))}
-              </select>
-              {errors.cidade && <span className="field-error">{errors.cidade}</span>}
-              {municipioMessage && !isLoadingMunicipios && (
-                <span className="field-error">{municipioMessage}</span>
-              )}
-              {!form.uf && (
-                <span className="field-hint">Informe a UF para habilitar a cidade.</span>
-              )}
-            </div>
+              ))}
+            </SelectField>
+            <SelectField
+              label="Cidade"
+              name="cidade"
+              value={form.ibge ?? ''}
+              disabled={isAddressFromCep || !form.uf || isLoadingMunicipios}
+              onChange={(e) => {
+                const selected = municipios.find(
+                  (municipio) => String(municipio.id) === e.target.value,
+                )
+                if (selected) {
+                  updateField('ibge', String(selected.id))
+                  updateField('cidade', selected.nome)
+                  updateField('estado', getStateName(selected.uf) ?? '')
+                } else {
+                  updateField('ibge', '')
+                  updateField('cidade', '')
+                }
+              }}
+              error={errors.cidade ?? (!isLoadingMunicipios ? municipioMessage ?? undefined : undefined)}
+              hint={!form.uf ? 'Informe a UF para habilitar a cidade.' : undefined}
+            >
+              <option value="">
+                {!form.uf
+                  ? 'Selecione a UF primeiro'
+                  : isLoadingMunicipios
+                    ? 'Carregando municípios...'
+                    : municipios.length === 0
+                      ? 'Nenhum município encontrado'
+                      : 'Selecione a cidade'}
+              </option>
+              {municipios.map((municipio) => (
+                <option key={municipio.id} value={municipio.id}>
+                  {municipio.nome}
+                </option>
+              ))}
+            </SelectField>
           </div>
         </fieldset>
 
         {!isEditing && (
           <fieldset className="form-section">
             <legend>Veículo</legend>
-            <label className="vehicle-toggle">
+            <label className="checkbox-field">
               <input
                 type="checkbox"
                 checked={includeVehicle}

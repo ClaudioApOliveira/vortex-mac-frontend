@@ -18,6 +18,8 @@ import {
   formatServiceOrderDateTime,
   getServiceOrderStatusLabel,
 } from '../../utils/serviceOrder'
+import { FormField } from '../../components/ui/FormField'
+import { SelectField } from '../../components/ui/SelectField'
 import '../customers/CustomersPage.css'
 import './pageFilters.css'
 import './ClientReportsPage.css'
@@ -213,61 +215,53 @@ export function ClientReportsPage() {
 
       <section className="client-reports-panel">
         <div className="page-filters client-reports-filters">
-          <div className="form-field">
-            <label htmlFor="report-veiculo">Veículo</label>
-            <select
-              id="report-veiculo"
-              value={veiculoKey}
-              onChange={(e) => setVeiculoKey(e.target.value)}
-              disabled={isLoading || isGenerating}
-            >
-              <option value="">Todos os veículos</option>
-              {vehicleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            label="Veículo"
+            id="report-veiculo"
+            value={veiculoKey}
+            onChange={(e) => setVeiculoKey(e.target.value)}
+            disabled={isLoading || isGenerating}
+          >
+            <option value="">Todos os veículos</option>
+            {vehicleOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </SelectField>
 
-          <div className="form-field">
-            <label htmlFor="report-status">Status</label>
-            <select
-              id="report-status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as StatusFilter)}
-              disabled={isLoading || isGenerating}
-            >
-              <option value="">Todos</option>
-              {SERVICE_ORDER_STATUSES.map((item) => (
-                <option key={item} value={item}>
-                  {getServiceOrderStatusLabel(item)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SelectField
+            label="Status"
+            id="report-status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as StatusFilter)}
+            disabled={isLoading || isGenerating}
+          >
+            <option value="">Todos</option>
+            {SERVICE_ORDER_STATUSES.map((item) => (
+              <option key={item} value={item}>
+                {getServiceOrderStatusLabel(item)}
+              </option>
+            ))}
+          </SelectField>
 
-          <div className="form-field">
-            <label htmlFor="report-inicio">Data início</label>
-            <input
-              id="report-inicio"
-              type="date"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-              disabled={isLoading || isGenerating}
-            />
-          </div>
+          <FormField
+            label="Data início"
+            id="report-inicio"
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+            disabled={isLoading || isGenerating}
+          />
 
-          <div className="form-field">
-            <label htmlFor="report-fim">Data fim</label>
-            <input
-              id="report-fim"
-              type="date"
-              value={dataFim}
-              onChange={(e) => setDataFim(e.target.value)}
-              disabled={isLoading || isGenerating}
-            />
-          </div>
+          <FormField
+            label="Data fim"
+            id="report-fim"
+            type="date"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+            disabled={isLoading || isGenerating}
+          />
         </div>
 
         {isLoading ? (

@@ -34,18 +34,6 @@
   gap: 1rem;
 }
 
-.profile-readonly {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.profile-readonly label {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
 .profile-form-actions {
   display: flex;
   justify-content: flex-end;

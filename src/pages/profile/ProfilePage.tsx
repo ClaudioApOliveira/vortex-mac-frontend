@@ -11,6 +11,7 @@ import { ApiError } from '../../api/errors'
 import { UserProfileBadge } from '../../components/users/UserFormModal'
 import '../../components/users/UserFormModal.css'
 import { FormField } from '../../components/ui/FormField'
+import { PasswordField } from '../../components/ui/PasswordField'
 import { LGPD_POLICY_VERSION } from '../../constants/lgpd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useConfirmDialog } from '../../hooks/useConfirmDialog'
@@ -271,7 +272,7 @@ export function ProfilePage() {
               placeholder="seu@email.com"
             />
 
-            <div className="profile-readonly">
+            <div className="form-field">
               <label>Perfil de acesso</label>
               <UserProfileBadge perfil={user.perfil} />
             </div>
@@ -301,10 +302,9 @@ export function ProfilePage() {
           {passwordError && <p className="page-error-banner">{passwordError}</p>}
 
           <form className="profile-form" onSubmit={handlePasswordSubmit} noValidate>
-            <FormField
+            <PasswordField
               label="Senha atual"
               name="senhaAtual"
-              type="password"
               value={passwordForm.senhaAtual}
               onChange={(event) =>
                 updatePasswordField('senhaAtual', event.target.value)
@@ -312,10 +312,9 @@ export function ProfilePage() {
               error={passwordErrors.senhaAtual}
               autoComplete="current-password"
             />
-            <FormField
+            <PasswordField
               label="Nova senha"
               name="novaSenha"
-              type="password"
               value={passwordForm.novaSenha}
               onChange={(event) =>
                 updatePasswordField('novaSenha', event.target.value)
@@ -323,10 +322,9 @@ export function ProfilePage() {
               error={passwordErrors.novaSenha}
               autoComplete="new-password"
             />
-            <FormField
+            <PasswordField
               label="Confirmar nova senha"
               name="confirmarSenha"
-              type="password"
               value={passwordForm.confirmarSenha}
               onChange={(event) =>
                 updatePasswordField('confirmarSenha', event.target.value)

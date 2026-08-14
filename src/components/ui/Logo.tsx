@@ -1,5 +1,5 @@
 import logoFull from '../../assets/logo-vortex.webp'
-import logoMark from '../../assets/logo-vortex-mark-80.webp'
+import logoMark from '../../assets/logo-vortex-mark.webp'
 import './Logo.css'
 
 interface LogoProps {

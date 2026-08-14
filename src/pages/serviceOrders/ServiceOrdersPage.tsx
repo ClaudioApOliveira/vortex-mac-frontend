@@ -10,6 +10,8 @@ import { ServiceOrderStatusActions } from '../../components/serviceOrders/Servic
 import { ServiceOrderStatusBadge } from '../../components/serviceOrders/ServiceOrderStatusBadge'
 import '../../components/serviceOrders/ServiceOrderStatusBadge.css'
 import { Pagination } from '../../components/ui/Pagination'
+import { FormField } from '../../components/ui/FormField'
+import { SelectField } from '../../components/ui/SelectField'
 import '../../components/ui/Pagination.css'
 import { DEFAULT_PAGE_SIZE } from '../../constants/pagination'
 import { useAuth } from '../../contexts/AuthContext'
@@ -319,73 +321,63 @@ export function ServiceOrdersPage() {
       )}
 
       <div className="page-filters">
-        <div className="form-field">
-          <label htmlFor="os-filter-busca">Busca</label>
-          <input
-            id="os-filter-busca"
-            type="search"
-            value={draftFilters.busca ?? ''}
-            onChange={(e) => updateDraft('busca', e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') applyFilters()
-            }}
-            placeholder="Cliente, placa ou responsável"
-          />
-        </div>
+        <FormField
+          label="Busca"
+          id="os-filter-busca"
+          type="search"
+          value={draftFilters.busca ?? ''}
+          onChange={(e) => updateDraft('busca', e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') applyFilters()
+          }}
+          placeholder="Cliente, placa ou responsável"
+        />
 
-        <div className="form-field">
-          <label htmlFor="os-filter-status">Status</label>
-          <select
-            id="os-filter-status"
-            value={draftFilters.status ?? ''}
-            onChange={(e) =>
-              updateDraft('status', e.target.value as ServiceOrderStatus | '')
-            }
-          >
-            <option value="">Todos</option>
-            {SERVICE_ORDER_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {getServiceOrderStatusLabel(status)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Status"
+          id="os-filter-status"
+          value={draftFilters.status ?? ''}
+          onChange={(e) =>
+            updateDraft('status', e.target.value as ServiceOrderStatus | '')
+          }
+        >
+          <option value="">Todos</option>
+          {SERVICE_ORDER_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {getServiceOrderStatusLabel(status)}
+            </option>
+          ))}
+        </SelectField>
 
-        <div className="form-field">
-          <label htmlFor="os-filter-tecnico">Responsável</label>
-          <select
-            id="os-filter-tecnico"
-            value={draftFilters.tecnicoId ?? ''}
-            onChange={(e) => updateDraft('tecnicoId', e.target.value)}
-          >
-            <option value="">Todos</option>
-            {technicians.map((technician) => (
-              <option key={technician.id} value={technician.id}>
-                {technician.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Responsável"
+          id="os-filter-tecnico"
+          value={draftFilters.tecnicoId ?? ''}
+          onChange={(e) => updateDraft('tecnicoId', e.target.value)}
+        >
+          <option value="">Todos</option>
+          {technicians.map((technician) => (
+            <option key={technician.id} value={technician.id}>
+              {technician.nome}
+            </option>
+          ))}
+        </SelectField>
 
-        <div className="form-field">
-          <label htmlFor="os-filter-inicio">Data início</label>
-          <input
-            id="os-filter-inicio"
-            type="date"
-            value={draftFilters.dataInicio ?? ''}
-            onChange={(e) => updateDraft('dataInicio', e.target.value)}
-          />
-        </div>
+        <FormField
+          label="Data início"
+          id="os-filter-inicio"
+          type="date"
+          value={draftFilters.dataInicio ?? ''}
+          onChange={(e) => updateDraft('dataInicio', e.target.value)}
+        />
 
-        <div className="form-field">
-          <label htmlFor="os-filter-fim">Data fim</label>
-          <input
-            id="os-filter-fim"
-            type="date"
-            value={draftFilters.dataFim ?? ''}
-            onChange={(e) => updateDraft('dataFim', e.target.value)}
-          />
-        </div>
+        <FormField
+          label="Data fim"
+          id="os-filter-fim"
+          type="date"
+          value={draftFilters.dataFim ?? ''}
+          onChange={(e) => updateDraft('dataFim', e.target.value)}
+        />
 
         <div className="page-filters-actions">
           <button type="button" className="btn btn-secondary" onClick={applyFilters}>

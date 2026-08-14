@@ -1,22 +1,28 @@
 import { useState, type InputHTMLAttributes } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { RequiredMark } from './FormField'
 
 interface PasswordFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label: string
   error?: string
 }
 
-export function PasswordField({ label, error, id, ...props }: PasswordFieldProps) {
+export function PasswordField({ label, error, id, required, ...props }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false)
   const fieldId = id ?? props.name
 
   return (
     <div className="form-field">
-      <label htmlFor={fieldId}>{label}</label>
+      <label htmlFor={fieldId}>
+        {label}
+        {required ? <RequiredMark /> : null}
+      </label>
       <div className="password-field">
         <input
           id={fieldId}
           type={visible ? 'text' : 'password'}
+          required={required}
+          aria-required={required || undefined}
           className={error ? 'input-error' : ''}
           {...props}
         />

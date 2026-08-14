@@ -287,7 +287,7 @@ export function LoginPage() {
                 placeholder="Repita a senha"
                 autoComplete="new-password"
               />
-              <label className="login-consent">
+              <label className="checkbox-field">
                 <input
                   type="checkbox"
                   checked={lgpdAceite}

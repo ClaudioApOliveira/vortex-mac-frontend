@@ -21,6 +21,8 @@ import { displayPlaca, formatMoneyFromNumber, formatMoneyInput } from '../../uti
 import { getFormStatusOptions } from '../../utils/serviceOrderTransitions'
 import { formatCurrency, getServiceOrderStatusLabel } from '../../utils/serviceOrder'
 import { FormField, RequiredMark } from '../ui/FormField'
+import { SelectField } from '../ui/SelectField'
+import { TextAreaField } from '../ui/TextAreaField'
 import { Modal } from '../ui/Modal'
 import { ServiceOrderItemsEditor } from './ServiceOrderItemsEditor'
 import { ServiceOrderStatusBadge } from './ServiceOrderStatusBadge'
@@ -421,92 +423,74 @@ export function ServiceOrderFormModal({
             />
           </div>
 
-          <div className="form-field">
-            <label htmlFor="clienteId">
-              Proprietário
-              <RequiredMark />
-            </label>
-            <select
-              id="clienteId"
-              name="clienteId"
-              value={form.clienteId}
-              onChange={(e) => {
-                const clienteId = e.target.value
-                setForm((prev) => ({
-                  ...prev,
-                  clienteId,
-                  veiculoId: '',
-                }))
-                setErrors((prev) => ({
-                  ...prev,
-                  clienteId: undefined,
-                  veiculoId: undefined,
-                }))
-              }}
-              className={errors.clienteId ? 'input-error' : undefined}
-            >
-              <option value="">Selecione o proprietário</option>
-              {customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
-                  {customer.nome}
-                </option>
-              ))}
-            </select>
-            {errors.clienteId && <span className="field-error">{errors.clienteId}</span>}
-          </div>
+          <SelectField
+            label="Proprietário"
+            name="clienteId"
+            required
+            value={form.clienteId}
+            onChange={(e) => {
+              const clienteId = e.target.value
+              setForm((prev) => ({
+                ...prev,
+                clienteId,
+                veiculoId: '',
+              }))
+              setErrors((prev) => ({
+                ...prev,
+                clienteId: undefined,
+                veiculoId: undefined,
+              }))
+            }}
+            error={errors.clienteId}
+          >
+            <option value="">Selecione o proprietário</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.nome}
+              </option>
+            ))}
+          </SelectField>
 
           <div className="form-row">
-            <div className="form-field">
-              <label htmlFor="veiculoId">
-                Veículo
-                <RequiredMark />
-              </label>
-              <select
-                id="veiculoId"
-                name="veiculoId"
-                value={form.veiculoId}
-                disabled={!form.clienteId}
-                onChange={(e) => updateField('veiculoId', e.target.value)}
-                className={errors.veiculoId ? 'input-error' : undefined}
-              >
-                <option value="">
-                  {!form.clienteId ? 'Selecione o proprietário primeiro' : 'Selecione o veículo'}
+            <SelectField
+              label="Veículo"
+              name="veiculoId"
+              required
+              value={form.veiculoId}
+              disabled={!form.clienteId}
+              onChange={(e) => updateField('veiculoId', e.target.value)}
+              error={errors.veiculoId}
+            >
+              <option value="">
+                {!form.clienteId ? 'Selecione o proprietário primeiro' : 'Selecione o veículo'}
+              </option>
+              {customerVehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {displayPlaca(vehicle.placa)} — {vehicle.marca} {vehicle.modelo}
                 </option>
-                {customerVehicles.map((vehicle) => (
-                  <option key={vehicle.id} value={vehicle.id}>
-                    {displayPlaca(vehicle.placa)} — {vehicle.marca} {vehicle.modelo}
-                  </option>
-                ))}
-              </select>
-              {errors.veiculoId && <span className="field-error">{errors.veiculoId}</span>}
-            </div>
+              ))}
+            </SelectField>
 
-            <div className="form-field">
-              <label htmlFor="tecnicoId">
-                Responsável
-                <RequiredMark />
-              </label>
-              <select
-                id="tecnicoId"
-                name="tecnicoId"
-                value={form.tecnicoId}
-                disabled={isLoadingTechnicians}
-                onChange={(e) => updateField('tecnicoId', e.target.value)}
-                className={errors.tecnicoId ? 'input-error' : undefined}
-              >
-                <option value="">
-                  {isLoadingTechnicians
-                    ? 'Carregando responsáveis...'
-                    : 'Selecione o responsável'}
+            <SelectField
+              label="Responsável"
+              name="tecnicoId"
+              required
+              value={form.tecnicoId}
+              disabled={isLoadingTechnicians}
+              onChange={(e) => updateField('tecnicoId', e.target.value)}
+              error={errors.tecnicoId}
+            >
+              <option value="">
+                {isLoadingTechnicians
+                  ? 'Carregando responsáveis...'
+                  : 'Selecione o responsável'}
+              </option>
+              {technicians.map((technician) => (
+                <option key={technician.id} value={technician.id}>
+                  {technician.nome}
                 </option>
-                {technicians.map((technician) => (
-                  <option key={technician.id} value={technician.id}>
-                    {technician.nome}
-                  </option>
-                ))}
-              </select>
-              {errors.tecnicoId && <span className="field-error">{errors.tecnicoId}</span>}
-            </div>
+              ))}
+            </SelectField>
           </div>
 
           <div className="form-row">
@@ -530,21 +514,15 @@ export function ServiceOrderFormModal({
             />
           </div>
 
-          <div className="form-field">
-            <label htmlFor="diagnosticoInicial">Diagnóstico</label>
-            <textarea
-              id="diagnosticoInicial"
-              name="diagnosticoInicial"
-              rows={4}
-              value={form.diagnosticoInicial ?? ''}
-              onChange={(e) => updateField('diagnosticoInicial', e.target.value)}
-              placeholder="Ex.: Cliente relata ruído ao frear; verificar pastilhas e discos. Complementar após inspeção..."
-              className={errors.diagnosticoInicial ? 'input-error' : undefined}
-            />
-            {errors.diagnosticoInicial && (
-              <span className="field-error">{errors.diagnosticoInicial}</span>
-            )}
-          </div>
+          <TextAreaField
+            label="Diagnóstico"
+            name="diagnosticoInicial"
+            rows={4}
+            value={form.diagnosticoInicial ?? ''}
+            onChange={(e) => updateField('diagnosticoInicial', e.target.value)}
+            placeholder="Ex.: Cliente relata ruído ao frear; verificar pastilhas e discos. Complementar após inspeção..."
+            error={errors.diagnosticoInicial}
+          />
         </fieldset>
 
         <fieldset className="form-section">
@@ -588,38 +566,24 @@ export function ServiceOrderFormModal({
           </div>
 
           <div className="form-row">
-            <div className="form-field">
-              <label htmlFor="descricaoServicosTerceirizados">
-                Descrição serviços terceirizados
-              </label>
-              <textarea
-                id="descricaoServicosTerceirizados"
-                name="descricaoServicosTerceirizados"
-                rows={3}
-                value={form.descricaoServicosTerceirizados ?? ''}
-                onChange={(e) => updateField('descricaoServicosTerceirizados', e.target.value)}
-                placeholder="Ex.: Retífica do cabeçote, balanceamento..."
-                className={errors.descricaoServicosTerceirizados ? 'input-error' : undefined}
-              />
-              {errors.descricaoServicosTerceirizados && (
-                <span className="field-error">{errors.descricaoServicosTerceirizados}</span>
-              )}
-            </div>
-            <div className="form-field">
-              <label htmlFor="descricaoMaoDeObra">Descrição mão de obra</label>
-              <textarea
-                id="descricaoMaoDeObra"
-                name="descricaoMaoDeObra"
-                rows={3}
-                value={form.descricaoMaoDeObra ?? ''}
-                onChange={(e) => updateField('descricaoMaoDeObra', e.target.value)}
-                placeholder="Ex.: Troca de óleo, revisão de freios..."
-                className={errors.descricaoMaoDeObra ? 'input-error' : undefined}
-              />
-              {errors.descricaoMaoDeObra && (
-                <span className="field-error">{errors.descricaoMaoDeObra}</span>
-              )}
-            </div>
+            <TextAreaField
+              label="Descrição serviços terceirizados"
+              name="descricaoServicosTerceirizados"
+              rows={3}
+              value={form.descricaoServicosTerceirizados ?? ''}
+              onChange={(e) => updateField('descricaoServicosTerceirizados', e.target.value)}
+              placeholder="Ex.: Retífica do cabeçote, balanceamento..."
+              error={errors.descricaoServicosTerceirizados}
+            />
+            <TextAreaField
+              label="Descrição mão de obra"
+              name="descricaoMaoDeObra"
+              rows={3}
+              value={form.descricaoMaoDeObra ?? ''}
+              onChange={(e) => updateField('descricaoMaoDeObra', e.target.value)}
+              placeholder="Ex.: Troca de óleo, revisão de freios..."
+              error={errors.descricaoMaoDeObra}
+            />
           </div>
 
           <div className="os-totals">

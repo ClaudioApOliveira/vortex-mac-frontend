@@ -15,6 +15,8 @@ import {
   formatServiceOrderDateTime,
   getServiceOrderStatusLabel,
 } from '../../utils/serviceOrder'
+import { FormField } from '../../components/ui/FormField'
+import { SelectField } from '../../components/ui/SelectField'
 import '../customers/CustomersPage.css'
 import './pageFilters.css'
 import './ClientReportsPage.css'
@@ -176,41 +178,47 @@ export function OfficeReportsPage() {
       {error && <p className="page-error-banner">{error}</p>}
 
       <div className="client-reports-panel">
-        <div className="page-filters client-reports-filters">
-          <label>
-            Status
-            <select value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
-              <option value="">Todos</option>
-              {SERVICE_ORDER_STATUSES.map((item) => (
-                <option key={item} value={item}>
-                  {getServiceOrderStatusLabel(item)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Responsável
-            <select value={tecnicoId} onChange={(e) => setTecnicoId(e.target.value)}>
-              <option value="">Todos</option>
-              {technicians.map((technician) => (
-                <option key={technician.id} value={technician.id}>
-                  {technician.nome}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Data início
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-            />
-          </label>
-          <label>
-            Data fim
-            <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
-          </label>
+        <div className="page-filters office-reports-filters">
+          <SelectField
+            label="Status"
+            id="office-report-status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as StatusFilter)}
+          >
+            <option value="">Todos</option>
+            {SERVICE_ORDER_STATUSES.map((item) => (
+              <option key={item} value={item}>
+                {getServiceOrderStatusLabel(item)}
+              </option>
+            ))}
+          </SelectField>
+          <SelectField
+            label="Responsável"
+            id="office-report-tecnico"
+            value={tecnicoId}
+            onChange={(e) => setTecnicoId(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {technicians.map((technician) => (
+              <option key={technician.id} value={technician.id}>
+                {technician.nome}
+              </option>
+            ))}
+          </SelectField>
+          <FormField
+            label="Data início"
+            id="office-report-inicio"
+            type="date"
+            value={dataInicio}
+            onChange={(e) => setDataInicio(e.target.value)}
+          />
+          <FormField
+            label="Data fim"
+            id="office-report-fim"
+            type="date"
+            value={dataFim}
+            onChange={(e) => setDataFim(e.target.value)}
+          />
           <div className="page-filters-actions">
             <button type="button" className="btn btn-primary" onClick={applyFilters}>
               Filtrar

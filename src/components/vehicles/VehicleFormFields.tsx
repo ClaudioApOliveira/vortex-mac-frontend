@@ -1,8 +1,8 @@
 import { FormField } from '../ui/FormField'
+import { SelectField } from '../ui/SelectField'
 import { ANO_VEICULO_MAX } from '../../schemas/vehicle.schema'
 import { formatAnoFabModelo, formatPlaca } from '../../utils/masks'
 import type { VehicleFormData } from '../../schemas/vehicle.schema'
-import './VehicleFormFields.css'
 
 const COMBUSTIVEL_OPTIONS = [
   { value: '', label: 'Selecione' },
@@ -41,24 +41,20 @@ export function VehicleFormFields({
   return (
     <>
       {showClienteSelect && (
-        <div className="form-field">
-          <label htmlFor="clienteId">Proprietário</label>
-          <select
-            id="clienteId"
-            name="clienteId"
-            value={clienteId}
-            onChange={(e) => onClienteChange?.(e.target.value)}
-            className={clienteError ? 'input-error' : undefined}
-          >
-            <option value="">Selecione o proprietário</option>
-            {customers.map((customer) => (
-              <option key={customer.id} value={customer.id}>
-                {customer.nome}
-              </option>
-            ))}
-          </select>
-          {clienteError && <span className="field-error">{clienteError}</span>}
-        </div>
+        <SelectField
+          label="Proprietário"
+          name="clienteId"
+          value={clienteId}
+          onChange={(e) => onClienteChange?.(e.target.value)}
+          error={clienteError}
+        >
+          <option value="">Selecione o proprietário</option>
+          {customers.map((customer) => (
+            <option key={customer.id} value={customer.id}>
+              {customer.nome}
+            </option>
+          ))}
+        </SelectField>
       )}
 
       <div className="form-row">
@@ -112,23 +108,19 @@ export function VehicleFormFields({
           error={errors.motor}
           placeholder="1.6"
         />
-        <div className="form-field">
-          <label htmlFor="combustivel">Combustível</label>
-          <select
-            id="combustivel"
-            name="combustivel"
-            value={form.combustivel ?? ''}
-            onChange={(e) => onChange('combustivel', e.target.value)}
-            className={errors.combustivel ? 'input-error' : undefined}
-          >
-            {COMBUSTIVEL_OPTIONS.map((option) => (
-              <option key={option.value || 'empty'} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          {errors.combustivel && <span className="field-error">{errors.combustivel}</span>}
-        </div>
+        <SelectField
+          label="Combustível"
+          name="combustivel"
+          value={form.combustivel ?? ''}
+          onChange={(e) => onChange('combustivel', e.target.value)}
+          error={errors.combustivel}
+        >
+          {COMBUSTIVEL_OPTIONS.map((option) => (
+            <option key={option.value || 'empty'} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectField>
       </div>
 
       <FormField

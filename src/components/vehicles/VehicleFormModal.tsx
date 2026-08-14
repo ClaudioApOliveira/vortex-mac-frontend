@@ -11,7 +11,6 @@ import { Modal } from '../ui/Modal'
 import { VehicleFormFields } from './VehicleFormFields'
 import { mapZodErrors } from '../../utils/mapZodErrors'
 import '../ui/FormModal.css'
-import './VehicleFormFields.css'
 
 interface VehicleFormModalProps {
   isOpen: boolean

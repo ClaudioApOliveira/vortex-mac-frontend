@@ -15,7 +15,7 @@
 }
 
 .page-filters .form-field label {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0;
 }
 
 .page-filters-actions {
@@ -46,6 +46,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+.office-reports-filters {
+  margin-bottom: 0;
+  grid-template-columns: repeat(4, minmax(9rem, 1fr)) auto;
 }
 
 .table-status-actions {
